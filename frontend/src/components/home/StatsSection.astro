@@ -1,0 +1,61 @@
+---
+// StatsSection.astro
+//
+// SSR-rendered live system statistics for the home page. The client
+// catalog controller updates the three `data-stat` nodes after a zone
+// refresh, so those hooks intentionally remain unchanged.
+
+interface Props {
+  totalZones: number;
+  totalEvCapacity: number;
+  evZoneCount: number;
+  totalAvailableSpots: number;
+  totalCapacity: number;
+}
+
+const {
+  totalZones,
+  totalEvCapacity,
+  evZoneCount,
+  totalAvailableSpots,
+  totalCapacity,
+} = Astro.props;
+---
+
+<section class="container mx-auto px-4 pb-16">
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+    <div class="glass-card p-6 text-center">
+      <p class="text-xs uppercase tracking-wider text-slate-400 font-semibold mb-2">
+        Total Zones Managed
+      </p>
+      <p class="font-display text-4xl md:text-5xl font-bold text-gradient-brand" data-stat="totalZones">
+        {totalZones}
+      </p>
+      <p class="text-xs text-slate-500 mt-2">across all parking types</p>
+    </div>
+
+    <div class="glass-card p-6 text-center">
+      <p class="text-xs uppercase tracking-wider text-slate-400 font-semibold mb-2">
+        EV Charger Capacity
+      </p>
+      <p class="font-display text-4xl md:text-5xl font-bold text-emerald-300" data-stat="evCapacity">
+        {totalEvCapacity}
+      </p>
+      <p class="text-xs text-slate-500 mt-2">
+        in {evZoneCount} EV charging zone{evZoneCount === 1 ? "" : "s"}
+      </p>
+    </div>
+
+    <div class="glass-card p-6 text-center">
+      <p class="text-xs uppercase tracking-wider text-slate-400 font-semibold mb-2">
+        Spots Available Right Now
+      </p>
+      <p class="font-display text-4xl md:text-5xl font-bold text-blue-300" data-stat="availableSpots">
+        {totalAvailableSpots}
+      </p>
+      <p class="text-xs text-slate-500 mt-2">
+        of {totalCapacity} total capacity
+      </p>
+    </div>
+  </div>
+</section>

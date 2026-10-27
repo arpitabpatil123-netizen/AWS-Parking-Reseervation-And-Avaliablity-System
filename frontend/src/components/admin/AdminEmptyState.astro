@@ -1,0 +1,114 @@
+---
+/**
+ * Admin empty / loading / error state placeholder.
+ *
+ * Renders one of three states (empty, loading, error) inside a panel.
+ * Page scripts toggle the visibility via the `data-state` attribute.
+ */
+
+interface Props {
+  /** Which state to render. Hidden by default; page scripts toggle. */
+  state?: "loading" | "empty" | "error";
+  /** Title shown in the empty state. */
+  title?: string;
+  /** Description shown in the empty state. */
+  description?: string;
+  /** Optional data key for the lookup hook. */
+  dataKey?: string;
+  /** Optional CTA. */
+  ctaLabel?: string;
+  /** Optional CTA target selector (clicking fires the action). */
+  ctaAction?: string;
+  /** Optional icon. */
+  icon?: "inbox" | "alert" | "search";
+}
+
+const {
+  state = "loading",
+  title,
+  description,
+  dataKey,
+  ctaLabel,
+  ctaAction,
+  icon = "inbox",
+} = Astro.props as Props;
+---
+
+<div
+  class="admin-state w-full"
+  data-admin-state={dataKey}
+  data-current-state={state}
+  hidden
+>
+  {state === "loading" && (
+    <div class="admin-state__loading flex flex-col gap-3 py-4 px-5">
+      <div class="admin-state__skeleton-row flex items-center gap-3 p-3 rounded-[0.625rem] bg-[hsl(var(--surface-2)/0.5)]">
+        <div class="admin-state__skeleton-rect w-10 h-10 rounded-lg bg-[linear-gradient(90deg,hsl(var(--surface-2))_0%,hsl(var(--surface-3))_50%,hsl(var(--surface-2))_100%)] bg-[length:200%_100%] animate-admin-state-shimmer shrink-0"></div>
+        <div class="admin-state__skeleton-row-text flex-1 flex flex-col gap-[0.45rem]">
+          <div class="admin-state__skeleton-bar h-[0.7rem] rounded-[0.3rem] bg-[linear-gradient(90deg,hsl(var(--surface-2))_0%,hsl(var(--surface-3))_50%,hsl(var(--surface-2))_100%)] bg-[length:200%_100%] animate-admin-state-shimmer w-[45%]"></div>
+          <div class="admin-state__skeleton-bar admin-state__skeleton-bar--thin h-[0.5rem] w-[60%] rounded-[0.3rem] bg-[linear-gradient(90deg,hsl(var(--surface-2))_0%,hsl(var(--surface-3))_50%,hsl(var(--surface-2))_100%)] bg-[length:200%_100%] animate-admin-state-shimmer"></div>
+        </div>
+      </div>
+      <div class="admin-state__skeleton-row flex items-center gap-3 p-3 rounded-[0.625rem] bg-[hsl(var(--surface-2)/0.5)]">
+        <div class="admin-state__skeleton-rect w-10 h-10 rounded-lg bg-[linear-gradient(90deg,hsl(var(--surface-2))_0%,hsl(var(--surface-3))_50%,hsl(var(--surface-2))_100%)] bg-[length:200%_100%] animate-admin-state-shimmer shrink-0"></div>
+        <div class="admin-state__skeleton-row-text flex-1 flex flex-col gap-[0.45rem]">
+          <div class="admin-state__skeleton-bar h-[0.7rem] rounded-[0.3rem] bg-[linear-gradient(90deg,hsl(var(--surface-2))_0%,hsl(var(--surface-3))_50%,hsl(var(--surface-2))_100%)] bg-[length:200%_100%] animate-admin-state-shimmer w-[55%]"></div>
+          <div class="admin-state__skeleton-bar admin-state__skeleton-bar--thin h-[0.5rem] w-[60%] rounded-[0.3rem] bg-[linear-gradient(90deg,hsl(var(--surface-2))_0%,hsl(var(--surface-3))_50%,hsl(var(--surface-2))_100%)] bg-[length:200%_100%] animate-admin-state-shimmer"></div>
+        </div>
+      </div>
+      <div class="admin-state__skeleton-row flex items-center gap-3 p-3 rounded-[0.625rem] bg-[hsl(var(--surface-2)/0.5)]">
+        <div class="admin-state__skeleton-rect w-10 h-10 rounded-lg bg-[linear-gradient(90deg,hsl(var(--surface-2))_0%,hsl(var(--surface-3))_50%,hsl(var(--surface-2))_100%)] bg-[length:200%_100%] animate-admin-state-shimmer shrink-0"></div>
+        <div class="admin-state__skeleton-row-text flex-1 flex flex-col gap-[0.45rem]">
+          <div class="admin-state__skeleton-bar h-[0.7rem] rounded-[0.3rem] bg-[linear-gradient(90deg,hsl(var(--surface-2))_0%,hsl(var(--surface-3))_50%,hsl(var(--surface-2))_100%)] bg-[length:200%_100%] animate-admin-state-shimmer w-[40%]"></div>
+          <div class="admin-state__skeleton-bar admin-state__skeleton-bar--thin h-[0.5rem] w-[60%] rounded-[0.3rem] bg-[linear-gradient(90deg,hsl(var(--surface-2))_0%,hsl(var(--surface-3))_50%,hsl(var(--surface-2))_100%)] bg-[length:200%_100%] animate-admin-state-shimmer"></div>
+        </div>
+      </div>
+    </div>
+  )}
+
+  {state === "empty" && (
+    <div class="admin-state__content flex flex-col items-center justify-center gap-2 py-12 px-6 text-center">
+      <span class="admin-state__icon admin-state__icon--muted inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-[hsl(var(--surface-2))] text-[hsl(var(--text-muted))] mb-2 [&_svg]:w-[1.85rem] [&_svg]:h-[1.85rem]" aria-hidden="true">
+        {icon === "inbox" && (
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"></polyline><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path></svg>
+        )}
+        {icon === "alert" && (
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+        )}
+        {icon === "search" && (
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        )}
+      </span>
+      <h3 class="admin-state__title font-display font-bold text-[1.1rem] text-[hsl(var(--text-strong))] m-0">{title ?? "Nothing here yet"}</h3>
+      {description && <p class="admin-state__description text-[hsl(var(--text-muted))] text-[0.9rem] max-w-[32rem] m-0">{description}</p>}
+      {ctaLabel && (
+        <button
+          type="button"
+          class="admin-state__cta mt-4 px-5 py-2 rounded-[0.625rem] bg-[hsl(var(--surface-2))] border border-[hsl(var(--surface-3))] text-[hsl(var(--text-strong))] text-[0.85rem] font-semibold cursor-pointer transition-colors duration-150 hover:bg-[hsl(var(--surface-3))]"
+          data-action={ctaAction}
+        >
+          {ctaLabel}
+        </button>
+      )}
+    </div>
+  )}
+
+  {state === "error" && (
+    <div class="admin-state__content flex flex-col items-center justify-center gap-2 py-12 px-6 text-center">
+      <span class="admin-state__icon admin-state__icon--error inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-[hsl(0_84%_95%)] text-[hsl(0_84%_45%)] mb-2 dark:bg-[hsl(0_84%_60%/0.12)] dark:text-[hsl(0_84%_70%)] [&_svg]:w-[1.85rem] [&_svg]:h-[1.85rem]" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+      </span>
+      <h3 class="admin-state__title font-display font-bold text-[1.1rem] text-[hsl(var(--text-strong))] m-0">{title ?? "Something went wrong"}</h3>
+      {description && <p class="admin-state__description text-[hsl(var(--text-muted))] text-[0.9rem] max-w-[32rem] m-0" data-error-message>{description}</p>}
+      {ctaLabel && (
+        <button
+          type="button"
+          class="admin-state__cta mt-4 px-5 py-2 rounded-[0.625rem] bg-[hsl(var(--surface-2))] border border-[hsl(var(--surface-3))] text-[hsl(var(--text-strong))] text-[0.85rem] font-semibold cursor-pointer transition-colors duration-150 hover:bg-[hsl(var(--surface-3))]"
+          data-action={ctaAction}
+        >
+          {ctaLabel}
+        </button>
+      )}
+    </div>
+  )}
+</div>

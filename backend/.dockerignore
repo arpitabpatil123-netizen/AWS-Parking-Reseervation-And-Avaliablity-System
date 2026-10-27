@@ -1,0 +1,41 @@
+# Git / VCS
+.git
+.gitignore
+.gitattributes
+.puku
+.puku-cli
+.vercel
+
+# Build artifacts / tmp
+tmp/
+*.exe
+*.test
+*.out
+bin/
+dist/
+
+# Local environment / IDE
+.env
+.env.*
+!.env.example
+.idea/
+.vscode/
+*.iml
+
+# Docker files (do not leak into image)
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# Frontend (we only build the backend)
+../frontend
+../README.md
+
+# Docs / logs
+docs/
+*.log
+build-errors.log
+
+# OS junk
+.DS_Store
+Thumbs.db

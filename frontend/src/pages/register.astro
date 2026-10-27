@@ -1,0 +1,279 @@
+---
+// Registration page (`/register`).
+//
+// Lets a brand-new visitor create either a Driver or Admin account.
+// Uses the shared AuthShell layout for consistent branding and the
+// RoleSelector component for an interactive role picker.
+
+import Layout from "@/layouts/Layout.astro";
+import AuthShell from "@/components/auth/AuthShell.astro";
+import AuthFormField from "@/components/auth/AuthFormField.astro";
+import RoleSelector from "@/components/auth/RoleSelector.astro";
+import PrimarySubmit from "@/components/auth/PrimarySubmit.astro";
+import { ROUTES } from "@/lib/constants";
+---
+
+<Layout title="Create Account — SpotSync" description="Create a SpotSync account to reserve parking and EV charging spots in real time.">
+
+  <AuthShell
+    heading="Create SpotSync account"
+    headingAccent="SpotSync"
+    subheading="Reserve parking and EV charging spots in real time. Pick your role and you're ready in seconds."
+    accent="blue"
+    badge="Get started"
+  >
+    <div class="flex flex-col gap-3">
+      <RoleSelector active="driver" />
+      <input id="role" name="role" type="hidden" value="driver" />
+    </div>
+
+    <div class="flex flex-col gap-3">
+      <div class="inline-flex items-center gap-2 text-[0.78rem] font-semibold uppercase tracking-[0.06em] text-slate-700 dark:text-slate-300">
+        <span class="inline-flex h-[1.4rem] w-[1.4rem] items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-emerald-600 text-[0.7rem] font-bold text-white shadow-[0_4px_12px_-3px_rgba(16,185,129,0.4)]">
+          2
+        </span>
+        <span>Your details</span>
+      </div>
+
+      <form id="register-form" class="flex flex-col gap-[1.1rem]" novalidate>
+        <AuthFormField
+          id="name"
+          name="name"
+          label="Full name"
+          type="text"
+          placeholder="Jane Doe"
+          autocomplete="name"
+          required={true}
+          minlength={2}
+          maxlength={100}
+          icon="user"
+        />
+
+        <AuthFormField
+          id="email"
+          name="email"
+          label="Email address"
+          type="email"
+          placeholder="you@example.com"
+          autocomplete="email"
+          required={true}
+          icon="mail"
+        />
+
+        <AuthFormField
+          id="password"
+          name="password"
+          label="Password"
+          type="password"
+          placeholder="At least 6 characters"
+          autocomplete="new-password"
+          required={true}
+          minlength={6}
+          icon="lock"
+        >
+          <p slot="hint" class="inline-flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-500 m-0">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-3.5 w-3.5 shrink-0">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="16" x2="12" y2="12"></line>
+              <line x1="12" y1="8" x2="12.01" y2="8"></line>
+            </svg>
+            Use at least 6 characters with a mix of letters and numbers.
+          </p>
+        </AuthFormField>
+
+        <label class="auth-checkbox inline-flex cursor-pointer select-none items-center gap-2.5 py-2">
+          <input type="checkbox" id="accept-terms" name="accept_terms" required class="peer absolute h-0 w-0 opacity-0" />
+          <span
+            aria-hidden="true"
+            class="auth-checkbox-box inline-flex h-[1.05rem] w-[1.05rem] shrink-0 items-center justify-center rounded-[0.3rem] border-[1.5px] border-slate-300 bg-white text-transparent transition-all duration-150 peer-checked:border-transparent peer-checked:bg-gradient-to-br peer-checked:from-emerald-500 peer-checked:to-emerald-600 peer-checked:text-white peer-checked:shadow-[0_0_0_3px_rgba(16,185,129,0.18)] dark:border-slate-700/80 dark:bg-slate-900/60 [&_svg]:h-3 [&_svg]:w-3"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+          </span>
+          <span class="auth-checkbox-label text-[0.8rem] text-slate-600 dark:text-slate-400">
+            I agree to the
+            <a href="#" class="auth-link-inline font-medium text-blue-600 no-underline transition-colors duration-150 hover:text-blue-500 hover:underline hover:underline-offset-[3px] dark:text-blue-300 dark:hover:text-blue-200">Terms of Service</a>
+            and
+            <a href="#" class="auth-link-inline font-medium text-blue-600 no-underline transition-colors duration-150 hover:text-blue-500 hover:underline hover:underline-offset-[3px] dark:text-blue-300 dark:hover:text-blue-200">Privacy Policy</a>
+          </span>
+        </label>
+
+        <div
+          id="register-error"
+          role="alert"
+          class="hidden flex items-center gap-2.5 rounded-[0.625rem] border border-red-500/35 bg-red-500/10 px-[0.85rem] py-[0.7rem] text-[0.85rem] text-red-700 dark:text-red-300"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-[1.1rem] w-[1.1rem] shrink-0">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+          </svg>
+          <span data-error-message></span>
+        </div>
+
+        <PrimarySubmit
+          label="Create Account"
+          icon="user-plus"
+          id="register-submit"
+        />
+      </form>
+    </div>
+
+    <p class="text-center text-[0.85rem] text-slate-600 dark:text-slate-400 mt-2 mb-0">
+      Already have an account?
+      <a href={ROUTES.LOGIN} class="font-semibold text-emerald-600 no-underline transition-colors duration-150 hover:text-emerald-500 hover:underline hover:underline-offset-[3px] dark:text-emerald-400 dark:hover:text-emerald-300">Sign in instead</a>
+    </p>
+  </AuthShell>
+</Layout>
+
+<script>
+  import { ROUTES, USER_ROLES } from "../lib/constants";
+  import { ApiError } from "../services/api";
+import { register } from "../services/authService";
+import type { UserRole } from "../types/auth";
+
+  /* ---------- DOM lookups --------------------------------------------- */
+  const form = document.getElementById("register-form") as HTMLFormElement;
+  const nameInput = document.getElementById("name") as HTMLInputElement;
+  const emailInput = document.getElementById("email") as HTMLInputElement;
+  const passwordInput = document.getElementById("password") as HTMLInputElement;
+  const roleInput = document.getElementById("role") as HTMLInputElement;
+  const termsInput = document.getElementById("accept-terms") as HTMLInputElement;
+  const errorBox = document.getElementById("register-error") as HTMLDivElement;
+  const errorMessage = errorBox.querySelector("[data-error-message]") as HTMLElement;
+  const submitButton = document.getElementById("register-submit") as HTMLButtonElement;
+  const submitLabel = submitButton.querySelector("[data-label]") as HTMLElement;
+
+  /* ---------- Password visibility toggle ------------------------------ */
+  // Walk up to the wrapping div (added in AuthFormField via
+  // `.auth-input-wrap` / `[data-field-wrap]`) so the toggle always
+  // finds the correct sibling input — even when a future refactor
+  // moves the button outside of an `.auth-input-wrap` ancestor.
+  document.querySelectorAll<HTMLButtonElement>("[data-toggle-password]").forEach((btn) => {
+    btn.addEventListener("click", (event) => {
+      event.preventDefault();
+      const wrap =
+        btn.closest<HTMLElement>("[data-field-wrap]") ??
+        btn.closest<HTMLElement>(".auth-input-wrap");
+      const input = wrap?.querySelector<HTMLInputElement>(
+        'input[type="password"], input[type="text"]',
+      );
+      if (!input) return;
+
+      const isHidden = input.type === "password";
+      input.type = isHidden ? "text" : "password";
+
+      const eyeOn = btn.querySelector<HTMLElement>("[data-eye-on]");
+      const eyeOff = btn.querySelector<HTMLElement>("[data-eye-off]");
+      // When password is now visible (text), show the "off" (crossed) icon.
+      // When password is now hidden (password), show the "on" (open) icon.
+      eyeOn?.classList.toggle("hidden", !isHidden);
+      eyeOff?.classList.toggle("hidden", isHidden);
+
+      btn.setAttribute(
+        "aria-label",
+        isHidden ? "Hide password" : "Show password",
+      );
+      btn.setAttribute("aria-pressed", String(isHidden));
+    });
+  });
+
+  /* ---------- Role card toggle -------------------------------------- */
+  const roleCards = document.querySelectorAll<HTMLButtonElement>("[data-role-card]");
+  roleCards.forEach((card) => {
+    card.addEventListener("click", () => {
+      const role = card.dataset.roleCard as UserRole | undefined;
+      if (!role) return;
+
+      roleInput.value = role;
+
+      roleCards.forEach((other) => {
+        const isActive = other === card;
+        other.dataset.roleActive = String(isActive);
+        other.setAttribute("aria-pressed", String(isActive));
+      });
+    });
+  });
+
+  /* ---------- Helpers ----------------------------------------------- */
+  function showError(message: string): void {
+    errorMessage.textContent = message;
+    errorBox.classList.remove("hidden");
+  }
+
+  function hideError(): void {
+    errorBox.classList.add("hidden");
+    errorMessage.textContent = "";
+  }
+
+  function setLoading(loading: boolean): void {
+    submitButton.disabled = loading;
+    submitButton.dataset.loading = loading ? "true" : "false";
+    submitLabel.textContent = loading ? "Creating account..." : "Create Account";
+    submitButton.querySelector("[data-spinner]")?.classList.toggle("hidden", !loading);
+    submitButton.querySelector("[data-arrow]")?.classList.toggle("invisible", loading);
+  }
+
+  function friendlyError(err: unknown): string {
+    if (err instanceof ApiError) {
+      const message = err.message.toLowerCase();
+      if (err.status === 409 || message.includes("email already exists")) {
+        return "An account with that email already exists.";
+      }
+      if (err.status === 400 || err.status === 422) {
+        return err.errors || err.message || "Please check your input and try again.";
+      }
+      if (err.status === 0) return "Unable to reach the server. Please check your connection.";
+      return err.message;
+    }
+    if (err instanceof Error) return err.message;
+    return "An unexpected error occurred. Please try again.";
+  }
+
+  /* ---------- Submit handler ---------------------------------------- */
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    hideError();
+
+    const name = nameInput.value.trim();
+    const email = emailInput.value.trim();
+    const password = passwordInput.value;
+    const role = (roleInput.value || USER_ROLES.DRIVER) as UserRole;
+
+    if (!name || name.length < 2) {
+      showError("Please enter your full name (at least 2 characters).");
+      nameInput.focus();
+      return;
+    }
+    if (!email || !emailInput.validity.valid) {
+      showError("Please enter a valid email address.");
+      emailInput.focus();
+      return;
+    }
+    if (!password || password.length < 6) {
+      showError("Password must be at least 6 characters long.");
+      passwordInput.focus();
+      return;
+    }
+    if (!termsInput.checked) {
+      showError("Please accept the Terms of Service to continue.");
+      termsInput.focus();
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await register({ name, email, password, role });
+
+      window.sessionStorage.setItem(
+        "spotsync_auth_notice",
+        "Account created! Please sign in to continue.",
+      );
+      window.location.href = ROUTES.LOGIN;
+    } catch (err) {
+      setLoading(false);
+      showError(friendlyError(err));
+    }
+  });
+</script>

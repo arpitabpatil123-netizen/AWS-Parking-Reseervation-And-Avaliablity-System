@@ -1,0 +1,67 @@
+# =============================================================================
+# SpotSync frontend - docker-compose
+# =============================================================================# Brings up the Astro static frontend on top of the backend stack
+# defined in `backend/docker-compose.yml`. The frontend joins the same
+# `spotsync-net` external network so the browser, once it loads a page
+# from this container, can reach the Go backend by the in-network
+# service name `api` (via the URL baked into the JS bundle at build
+# time, see PUBLIC_API_BASE_URL below).
+#
+# IMPORTANT: do NOT hardcode `localhost` for container-to-container
+# communication. `localhost` inside the frontend container refers to
+# the frontend container itself, not the host machine, and would fail
+# to resolve to the backend. Docker's service-name DNS is what makes
+# container-to-container traffic work; we use the service name `api`
+# exactly as declared in `backend/docker-compose.yml`.
+#
+# Usage:
+#   # 1. Start the backend stack (db + api).
+#   docker compose -f backend/docker-compose.yml --env-file backend/.env.docker up -d
+#
+#   # 2. Build and start the frontend (joined to the same network).
+#   docker compose -f frontend/docker-compose.yml up --build -d
+#
+#   # 3. Tear down (in reverse order).
+#   docker compose -f frontend/docker-compose.yml down
+#   docker compose -f backend/docker-compose.yml --env-file backend/.env.docker down -v
+# -----------------------------------------------------------------------------
+
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      # The Astro build inlines PUBLIC_API_BASE_URL into the JS bundle
+      # (Vite behavior). We pass the in-network API URL so the browser
+      # fetch goes to `http://api:8080/api/v1` once the page is loaded
+      # in a user's browser. The backend service is named `api` in
+      # `backend/docker-compose.yml`.
+      args:
+        PUBLIC_API_BASE_URL: http://api:8080/api/v1
+    image: spotsync-frontend:latest
+    container_name: spotsync-frontend
+    restart: unless-stopped
+    # NOTE: we intentionally do NOT add `depends_on: api` here — this
+    # compose project does not define an `api` service. The frontend
+    # container just needs to be on `spotsync-net` (see `networks`
+    # below) so the in-bundle URL `http://api:8080/...` resolves via
+    # docker's service-name DNS. Operators should ensure the backend
+    # stack is up before users open the site.
+    ports:
+      - "4321:4321"
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--spider", "--tries=1", "--timeout=4", "http://127.0.0.1:4321/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - spotsync-net
+
+networks:
+  spotsync-net:
+    # Reuse the bridge network created by the backend compose instead
+    # of creating a duplicate. `external: true` tells compose not to
+    # manage (create / destroy) this network itself.
+    external: true
+    name: spotsync-net

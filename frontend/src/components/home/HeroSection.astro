@@ -1,0 +1,57 @@
+---
+// HeroSection.astro
+//
+// The at-a-glance hero block for the home page. Contains the live
+// status pulse, the gradient headline, the description paragraph, and
+// the two CTA buttons (Browse Parking Spots / How It Works).
+//
+// Pure presentational: no client-side script. All data attributes and
+// classes are preserved verbatim from the previous inline markup.
+---
+
+<section class="container mx-auto px-4 pt-16 md:pt-24 pb-12">
+  <div class="max-w-4xl mx-auto text-center">
+    <span
+      class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-sm font-medium mb-6"
+      data-live-status
+    >
+      <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse-glow"></span>
+      Real-Time Sync Active
+    </span>
+
+    <h1 class="font-display text-4xl md:text-6xl lg:text-7xl font-bold text-slate-50 leading-tight tracking-tight mb-6">
+      SpotSync
+      <span class="text-gradient-brand block md:inline">
+        Smart Parking & EV Charging Hub
+      </span>
+    </h1>
+
+    <p class="text-lg md:text-xl text-slate-300 max-w-2xl mx-auto mb-10 leading-relaxed">
+      Instantly locate, check real-time availability, and reserve
+      guaranteed parking spaces & EV chargers across the city.
+    </p>
+
+    <div class="flex flex-col sm:flex-row items-center justify-center gap-3">
+      <a
+        href="#zone-catalog"
+        class="btn-neon text-base px-6 py-3 inline-flex items-center gap-2"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4" aria-hidden="true">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        Browse Parking Spots
+      </a>
+      <a
+        href="#how-it-works"
+        class="btn-ghost-glass text-base px-6 py-3 inline-flex items-center gap-2"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4" aria-hidden="true">
+          <circle cx="12" cy="12" r="10"></circle>
+          <polyline points="12 6 12 12 16 14"></polyline>
+        </svg>
+        How It Works
+      </a>
+    </div>
+  </div>
+</section>

@@ -1,0 +1,82 @@
+---
+/**
+ * Admin status badge.
+ *
+ * Renders a small colored pill used in tables and cards. Works for
+ * reservation statuses (active / completed / cancelled) and user roles
+ * (driver / admin).
+ */
+
+type Status =
+  | "active"
+  | "completed"
+  | "cancelled"
+  | "driver"
+  | "admin";
+
+interface Props {
+  status: Status;
+  /** Optional override for the displayed label. */
+  label?: string;
+}
+
+const { status, label } = Astro.props as Props;
+
+const LABEL_MAP: Record<Status, string> = {
+  active: "Active",
+  completed: "Completed",
+  cancelled: "Cancelled",
+  driver: "Driver",
+  admin: "Admin",
+};
+
+const text = label ?? LABEL_MAP[status] ?? LABEL_MAP.cancelled;
+
+// Color tokens per status. Tailwind arbitrary values keep the exact HSL
+// colors from the original CSS. Light-mode colors are applied by default;
+// the dark-mode palette is applied via `dark:` variants.
+const STATUS_STYLES: Record<Status, { classes: string; dotClasses: string }> = {
+  active: {
+    classes:
+      "text-[hsl(160_84%_25%)] bg-[hsl(160_84%_95%)] border-[hsl(160_84%_85%)] " +
+      "dark:text-[hsl(160_84%_70%)] dark:bg-[hsl(160_84%_39%/0.15)] dark:border-[hsl(160_84%_39%/0.35)]",
+    dotClasses: "bg-[hsl(160_84%_39%)]",
+  },
+  completed: {
+    classes:
+      "text-[hsl(217_91%_35%)] bg-[hsl(217_91%_96%)] border-[hsl(217_91%_85%)] " +
+      "dark:text-[hsl(217_91%_75%)] dark:bg-[hsl(217_91%_60%/0.15)] dark:border-[hsl(217_91%_60%/0.35)]",
+    dotClasses: "bg-[hsl(217_91%_60%)]",
+  },
+  cancelled: {
+    classes:
+      "text-[hsl(215_25%_27%)] bg-[hsl(215_16%_95%)] border-[hsl(215_16%_85%)] " +
+      "dark:text-[hsl(215_20%_75%)] dark:bg-[hsl(215_20%_25%/0.4)] dark:border-[hsl(215_20%_30%)]",
+    dotClasses: "bg-[hsl(215_16%_55%)]",
+  },
+  driver: {
+    classes:
+      "text-[hsl(217_91%_35%)] bg-[hsl(217_91%_96%)] border-[hsl(217_91%_85%)] " +
+      "dark:text-[hsl(217_91%_75%)] dark:bg-[hsl(217_91%_60%/0.15)] dark:border-[hsl(217_91%_60%/0.35)]",
+    dotClasses: "bg-[hsl(217_91%_60%)]",
+  },
+  admin: {
+    classes:
+      "text-[hsl(160_84%_25%)] bg-[hsl(160_84%_95%)] border-[hsl(160_84%_85%)] " +
+      "dark:text-[hsl(160_84%_70%)] dark:bg-[hsl(160_84%_39%/0.15)] dark:border-[hsl(160_84%_39%/0.35)]",
+    dotClasses: "bg-[hsl(160_84%_39%)]",
+  },
+};
+
+const style = STATUS_STYLES[status] ?? STATUS_STYLES.cancelled;
+---
+
+<span
+  class:list={[
+    "admin-badge inline-flex items-center gap-[0.4rem] px-[0.65rem] py-[0.2rem] rounded-full text-[0.72rem] font-semibold leading-[1.4] border border-transparent whitespace-nowrap",
+    style.classes,
+  ]}
+>
+  <span class:list={["admin-badge__dot w-[0.4rem] h-[0.4rem] rounded-full shrink-0", style.dotClasses]} aria-hidden="true"></span>
+  <span class="admin-badge__label">{text}</span>
+</span>

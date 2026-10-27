@@ -1,0 +1,52 @@
+# Environment variables (DO NOT COMMIT)
+*.env
+*.env.*
+.env
+.env.*
+!.env.example
+!.env*.example
+
+# Go / Backend binaries and temporary files
+backend/tmp/
+tmp/
+bin/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# Node / Astro / Frontend dependencies & builds
+node_modules/
+frontend/node_modules/
+frontend/dist/
+frontend/.astro/
+dist/
+.astro/
+.npm
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Database & local SQLite files
+*.db
+*.db-shm
+*.db-wal
+
+# CLI & Internal tooling artifacts
+.puku/
+.puku-cli/
+
+# IDE & OS metadata
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+.DS_Store
+Thumbs.db

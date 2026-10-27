@@ -1,0 +1,62 @@
+---
+// ReservationHeader.astro
+//
+// Header for the driver's My Reservations dashboard. The `data-header-user`
+// badge is intentionally preserved for the existing client controller/
+// navigation state to target.
+---
+
+<header class="mb-10">
+  <div class="flex items-start justify-between gap-4 flex-wrap">
+    <div class="min-w-0">
+      <div class="flex items-center gap-2 mb-3">
+        <span
+          class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[0.65rem] font-bold uppercase tracking-[0.18em] bg-emerald-500/10 text-emerald-300 border border-emerald-500/30"
+        >
+          <span
+            class="relative w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-emerald-400/60 shadow-sm"
+            aria-hidden="true"
+          >
+            <span
+              class="absolute inset-0 rounded-full bg-emerald-400 animate-ping opacity-75"
+            ></span>
+          </span>
+          Live Dashboard
+        </span>
+        <span
+          class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[0.65rem] font-bold uppercase tracking-[0.18em] bg-slate-800/60 text-slate-300 border border-slate-700/60"
+          data-header-user
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-3 h-3" aria-hidden="true">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+            <circle cx="12" cy="7" r="4"></circle>
+          </svg>
+          Driver
+        </span>
+      </div>
+      <h1
+        class="font-display text-4xl md:text-5xl font-bold text-slate-50 leading-tight tracking-tight"
+      >
+        My <span class="text-gradient-brand">Reservations</span>
+      </h1>
+      <p class="text-slate-400 mt-3 max-w-2xl">
+        Manage every parking and EV charging spot you've reserved.
+        Cancel active bookings at any time to release the spot back
+        to the zone.
+      </p>
+    </div>
+
+    <button
+      type="button"
+      data-action="refresh"
+      class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold bg-slate-800/60 hover:bg-slate-700/80 text-slate-100 border border-slate-700/80 hover:border-slate-600 transition-all shadow-sm hover:shadow-md"
+      aria-label="Refresh reservations"
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4" aria-hidden="true" data-refresh-icon>
+        <polyline points="23 4 23 10 17 10"></polyline>
+        <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+      </svg>
+      Refresh
+    </button>
+  </div>
+</header>

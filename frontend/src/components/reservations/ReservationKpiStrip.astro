@@ -1,0 +1,124 @@
+---
+// ReservationKpiStrip.astro
+//
+// Four-up KPI strip on the My Reservations page. The data-kpi-*`
+// nodes are the hooks the client controller uses to repaint totals
+// after each API fetch. The skeleton placeholder inside each
+// `<p>` is what the user sees before the first fetch resolves.
+---
+
+<section
+  class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10"
+  aria-label="Reservation summary"
+  data-kpi-section
+>
+  <div
+    class="relative overflow-hidden rounded-2xl border border-slate-800/80 bg-slate-900/60 backdrop-blur-md p-5 shadow-xl shadow-black/20 transition-all hover:border-slate-700"
+  >
+    <div
+      class="absolute -top-12 -right-12 w-32 h-32 rounded-full bg-slate-500/10 blur-2xl"
+      aria-hidden="true"
+    >
+    </div>
+    <div class="relative flex items-center justify-between mb-3">
+      <span class="text-[0.65rem] uppercase tracking-[0.18em] text-slate-400 font-bold">
+        Total
+      </span>
+      <span
+        class="w-9 h-9 rounded-xl bg-slate-800/80 border border-slate-700/60 flex items-center justify-center text-slate-300"
+        aria-hidden="true"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
+          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+          <line x1="16" y1="2" x2="16" y2="6"></line>
+          <line x1="8" y1="2" x2="8" y2="6"></line>
+          <line x1="3" y1="10" x2="21" y2="10"></line>
+        </svg>
+      </span>
+    </div>
+    <p class="relative font-display text-3xl font-bold text-slate-50" data-kpi-total>
+      <span class="inline-block w-12 h-8 bg-slate-800/60 rounded animate-pulse"></span>
+    </p>
+  </div>
+
+  <div
+    class="relative overflow-hidden rounded-2xl border border-emerald-500/30 bg-gradient-to-br from-emerald-950/40 to-slate-900/60 backdrop-blur-md p-5 shadow-xl shadow-emerald-500/10 transition-all hover:border-emerald-400/60 hover:shadow-emerald-500/20"
+  >
+    <div
+      class="absolute -top-12 -right-12 w-32 h-32 rounded-full bg-emerald-500/20 blur-2xl"
+      aria-hidden="true"
+    >
+    </div>
+    <div class="relative flex items-center justify-between mb-3">
+      <span class="text-[0.65rem] uppercase tracking-[0.18em] text-emerald-300 font-bold">
+        Active
+      </span>
+      <span
+        class="w-9 h-9 rounded-xl bg-emerald-500/15 border border-emerald-400/30 flex items-center justify-center text-emerald-300"
+        aria-hidden="true"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
+          <circle cx="12" cy="12" r="10"></circle>
+          <polyline points="12 6 12 12 16 14"></polyline>
+        </svg>
+      </span>
+    </div>
+    <p class="relative font-display text-3xl font-bold text-emerald-200" data-kpi-active>
+      <span class="inline-block w-12 h-8 bg-emerald-500/15 rounded animate-pulse"></span>
+    </p>
+  </div>
+
+  <div
+    class="relative overflow-hidden rounded-2xl border border-slate-800/80 bg-slate-900/60 backdrop-blur-md p-5 shadow-xl shadow-black/20 transition-all hover:border-slate-700"
+  >
+    <div
+      class="absolute -top-12 -right-12 w-32 h-32 rounded-full bg-slate-600/10 blur-2xl"
+      aria-hidden="true"
+    >
+    </div>
+    <div class="relative flex items-center justify-between mb-3">
+      <span class="text-[0.65rem] uppercase tracking-[0.18em] text-slate-400 font-bold">
+        Cancelled
+      </span>
+      <span
+        class="w-9 h-9 rounded-xl bg-slate-800/80 border border-slate-700/60 flex items-center justify-center text-slate-400"
+        aria-hidden="true"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="15" y1="9" x2="9" y2="15"></line>
+          <line x1="9" y1="9" x2="15" y2="15"></line>
+        </svg>
+      </span>
+    </div>
+    <p class="relative font-display text-3xl font-bold text-slate-300" data-kpi-cancelled>
+      <span class="inline-block w-12 h-8 bg-slate-800/60 rounded animate-pulse"></span>
+    </p>
+  </div>
+
+  <div
+    class="relative overflow-hidden rounded-2xl border border-blue-500/30 bg-gradient-to-br from-blue-950/40 to-slate-900/60 backdrop-blur-md p-5 shadow-xl shadow-blue-500/10 transition-all hover:border-blue-400/60 hover:shadow-blue-500/20"
+  >
+    <div
+      class="absolute -top-12 -right-12 w-32 h-32 rounded-full bg-blue-500/20 blur-2xl"
+      aria-hidden="true"
+    >
+    </div>
+    <div class="relative flex items-center justify-between mb-3">
+      <span class="text-[0.65rem] uppercase tracking-[0.18em] text-blue-300 font-bold">
+        Latest
+      </span>
+      <span
+        class="w-9 h-9 rounded-xl bg-blue-500/15 border border-blue-400/30 flex items-center justify-center text-blue-300"
+        aria-hidden="true"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
+          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+        </svg>
+      </span>
+    </div>
+    <p class="relative font-display text-3xl font-bold text-blue-200" data-kpi-latest>
+      <span class="inline-block w-12 h-8 bg-blue-500/15 rounded animate-pulse"></span>
+    </p>
+  </div>
+</section>

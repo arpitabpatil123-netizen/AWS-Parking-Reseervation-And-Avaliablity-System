@@ -1,0 +1,126 @@
+---
+// RoleSelector — compact two-card role picker for the registration page.
+// Mirrors the visual rhythm of DemoFill.astro (login page's "Sign in as
+// Driver/Admin" cards) so both auth pages feel consistent.
+//
+// Renders two <button type="button"> elements with data-role-card
+// attributes so the parent script can read the selection. The hidden
+// form field bound to the active role lives on the parent page.
+//
+// Theming: matches DemoFill — every surface uses light defaults +
+// dark: variants so it integrates cleanly into AuthShell.
+
+interface Props {
+  /** Currently active role; defaults to "driver". */
+  active?: "driver" | "admin";
+}
+
+const { active = "driver" } = Astro.props;
+
+const driverActive = active === "driver";
+const adminActive = active === "admin";
+---
+
+<div class="flex flex-col gap-2.5">
+  <div class="flex items-center gap-3">
+    <span class="text-[0.7rem] font-semibold uppercase tracking-[0.08em] text-slate-500 dark:text-slate-500">
+      Choose account type
+    </span>
+    <span
+      class="h-px flex-1 bg-gradient-to-r from-slate-300 to-transparent dark:from-slate-700/50 dark:to-transparent"
+      aria-hidden="true"
+    ></span>
+  </div>
+  <div class="grid grid-cols-2 gap-2" data-role-selector>
+    <button
+      type="button"
+      data-role-card="driver"
+      data-role-active={driverActive ? "true" : "false"}
+      aria-pressed={driverActive ? "true" : "false"}
+      class={[
+        "flex items-center gap-2.5 rounded-lg border bg-white px-3 py-2.5 text-left font-sans text-slate-700 transition-all duration-200",
+        "hover:-translate-y-px hover:bg-slate-50",
+        "focus-visible:outline-none focus-visible:shadow-[0_0_0_3px_rgba(16,185,129,0.25)]",
+        "border-blue-500/30 hover:border-blue-500/50 hover:bg-blue-500/5",
+        "data-[role-active=true]:border-blue-500/70",
+        "data-[role-active=true]:bg-blue-500/10",
+        "data-[role-active=true]:shadow-[0_0_0_1px_rgba(59,130,246,0.35)]",
+        "dark:bg-slate-900/60 dark:text-slate-300 dark:hover:bg-slate-800/70",
+        "dark:focus-visible:shadow-[0_0_0_3px_rgba(16,185,129,0.35)]",
+        "dark:hover:border-blue-500/60 dark:hover:bg-blue-500/10",
+        "dark:data-[role-active=true]:border-blue-500/70",
+        "dark:data-[role-active=true]:bg-blue-500/15",
+        "dark:data-[role-active=true]:shadow-[0_0_0_1px_rgba(59,130,246,0.45)]",
+      ].join(" ")}
+    >
+      <span
+        class={[
+          "flex h-8 w-8 shrink-0 items-center justify-center rounded-md [&_svg]:h-4 [&_svg]:w-4",
+          "border border-blue-500/40 bg-blue-500/15 text-blue-600",
+          "data-[role-active=true]:border-transparent",
+          "data-[role-active=true]:bg-gradient-to-br",
+          "data-[role-active=true]:from-blue-500",
+          "data-[role-active=true]:to-blue-600",
+          "data-[role-active=true]:text-white",
+          "data-[role-active=true]:shadow-[0_4px_12px_-2px_rgba(59,130,246,0.55)]",
+          "dark:border-blue-500/40 dark:bg-blue-500/20 dark:text-blue-300",
+        ].join(" ")}
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"></path>
+          <circle cx="7" cy="17" r="2"></circle>
+          <path d="M9 17h6"></path>
+          <circle cx="17" cy="17" r="2"></circle>
+        </svg>
+      </span>
+      <div class="flex min-w-0 flex-col gap-0.5">
+        <span class="text-[0.78rem] font-semibold leading-[1.2] text-slate-900 dark:text-slate-100">Sign up as Driver</span>
+        <span class="text-[0.68rem] leading-[1.2] text-slate-500 dark:text-slate-500">Reserve parking &amp; EV spots</span>
+      </div>
+    </button>
+
+    <button
+      type="button"
+      data-role-card="admin"
+      data-role-active={adminActive ? "true" : "false"}
+      aria-pressed={adminActive ? "true" : "false"}
+      class={[
+        "flex items-center gap-2.5 rounded-lg border bg-white px-3 py-2.5 text-left font-sans text-slate-700 transition-all duration-200",
+        "hover:-translate-y-px hover:bg-slate-50",
+        "focus-visible:outline-none focus-visible:shadow-[0_0_0_3px_rgba(16,185,129,0.25)]",
+        "border-emerald-500/30 hover:border-emerald-500/50 hover:bg-emerald-500/5",
+        "data-[role-active=true]:border-emerald-500/70",
+        "data-[role-active=true]:bg-emerald-500/10",
+        "data-[role-active=true]:shadow-[0_0_0_1px_rgba(16,185,129,0.35)]",
+        "dark:bg-slate-900/60 dark:text-slate-300 dark:hover:bg-slate-800/70",
+        "dark:focus-visible:shadow-[0_0_0_3px_rgba(16,185,129,0.35)]",
+        "dark:hover:border-emerald-500/60 dark:hover:bg-emerald-500/10",
+        "dark:data-[role-active=true]:border-emerald-500/70",
+        "dark:data-[role-active=true]:bg-emerald-500/15",
+        "dark:data-[role-active=true]:shadow-[0_0_0_1px_rgba(16,185,129,0.45)]",
+      ].join(" ")}
+    >
+      <span
+        class={[
+          "flex h-8 w-8 shrink-0 items-center justify-center rounded-md [&_svg]:h-4 [&_svg]:w-4",
+          "border border-emerald-500/40 bg-emerald-500/15 text-emerald-600",
+          "data-[role-active=true]:border-transparent",
+          "data-[role-active=true]:bg-gradient-to-br",
+          "data-[role-active=true]:from-emerald-500",
+          "data-[role-active=true]:to-emerald-600",
+          "data-[role-active=true]:text-white",
+          "data-[role-active=true]:shadow-[0_4px_12px_-2px_rgba(16,185,129,0.55)]",
+          "dark:border-emerald-500/40 dark:bg-emerald-500/20 dark:text-emerald-300",
+        ].join(" ")}
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"></path>
+        </svg>
+      </span>
+      <div class="flex min-w-0 flex-col gap-0.5">
+        <span class="text-[0.78rem] font-semibold leading-[1.2] text-slate-900 dark:text-slate-100">Sign up as Admin</span>
+        <span class="text-[0.68rem] leading-[1.2] text-slate-500 dark:text-slate-500">Manage zones &amp; activity</span>
+      </div>
+    </button>
+  </div>
+</div>

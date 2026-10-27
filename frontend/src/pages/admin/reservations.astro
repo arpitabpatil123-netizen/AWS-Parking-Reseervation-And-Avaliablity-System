@@ -1,0 +1,96 @@
+---
+/**
+ * Admin > Reservations (/admin/reservations)
+ *
+ * Thin shell — the live React island handles the table, filters,
+ * pagination, cancel and delete actions.
+ *
+ * `slot="fallback"` paints a loading skeleton that mirrors the final
+ * layout (KPI strip + filter chips + reservation table) so admins
+ * see immediate content instead of an empty <main>.
+ */
+
+import Layout from "@/layouts/Layout.astro";
+import AdminSidebar from "@/components/admin/AdminSidebar.astro";
+import AdminPanel from "@/components/admin/AdminPanel.astro";
+import AdminKpiCard from "@/components/admin/AdminKpiCard.astro";
+import { ReservationsTable } from "@/components/admin/ReservationsTable";
+---
+
+<Layout
+  title="Reservations — SpotSync Admin"
+  description="Every driver reservation across the SpotSync network."
+>
+  <AdminSidebar
+    title="Reservations"
+    subtitle="Every driver booking across the network — search, cancel, or delete."
+  >
+    <ReservationsTable client:load>
+      <div
+        slot="fallback"
+        class="admin-skeleton flex flex-col gap-6"
+        aria-busy="true"
+        aria-label="Loading reservations"
+      >
+        <!-- KPI strip -->
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <AdminKpiCard label="Total" icon="reservations" accent="emerald" caption="All reservations" />
+          <AdminKpiCard label="Active" icon="active" accent="blue" caption="In progress" />
+          <AdminKpiCard label="Completed" icon="completed" accent="purple" caption="Past bookings" />
+          <AdminKpiCard label="Cancelled" icon="cancelled" accent="rose" caption="By driver or admin" />
+        </div>
+
+        <!-- Table panel -->
+        <AdminPanel title="Reservations" subtitle="Filter, sort, cancel, or delete bookings" flush>
+          <!-- Toolbar placeholder: search input + filter chips -->
+          <div class="flex flex-wrap items-center gap-3 mb-5">
+            <div class="h-10 flex-1 min-w-[12rem] rounded-xl bg-[linear-gradient(90deg,hsl(var(--surface-2))_0%,hsl(var(--surface-3))_50%,hsl(var(--surface-2))_100%)] bg-[length:200%_100%] animate-admin-state-shimmer"></div>
+            <div class="flex items-center gap-2">
+              <div class="h-10 w-16 rounded-xl bg-[linear-gradient(90deg,hsl(var(--surface-2))_0%,hsl(var(--surface-3))_50%,hsl(var(--surface-2))_100%)] bg-[length:200%_100%] animate-admin-state-shimmer"></div>
+              <div class="h-10 w-20 rounded-xl bg-[linear-gradient(90deg,hsl(var(--surface-2))_0%,hsl(var(--surface-3))_50%,hsl(var(--surface-2))_100%)] bg-[length:200%_100%] animate-admin-state-shimmer"></div>
+              <div class="h-10 w-24 rounded-xl bg-[linear-gradient(90deg,hsl(var(--surface-2))_0%,hsl(var(--surface-3))_50%,hsl(var(--surface-2))_100%)] bg-[length:200%_100%] animate-admin-state-shimmer"></div>
+            </div>
+          </div>
+
+          <!-- Table skeleton -->
+          <div class="flex flex-col gap-2 pb-5 px-[1.25rem]">
+            <!-- Header row -->
+            <div class="flex items-center gap-3 py-2 border-b border-[hsl(var(--surface-3))]">
+              <div class="h-3 w-12 rounded bg-[linear-gradient(90deg,hsl(var(--surface-2))_0%,hsl(var(--surface-3))_50%,hsl(var(--surface-2))_100%)] bg-[length:200%_100%] animate-admin-state-shimmer"></div>
+              <div class="h-3 w-24 rounded bg-[linear-gradient(90deg,hsl(var(--surface-2))_0%,hsl(var(--surface-3))_50%,hsl(var(--surface-2))_100%)] bg-[length:200%_100%] animate-admin-state-shimmer"></div>
+              <div class="h-3 w-24 rounded bg-[linear-gradient(90deg,hsl(var(--surface-2))_0%,hsl(var(--surface-3))_50%,hsl(var(--surface-2))_100%)] bg-[length:200%_100%] animate-admin-state-shimmer"></div>
+              <div class="h-3 w-20 rounded bg-[linear-gradient(90deg,hsl(var(--surface-2))_0%,hsl(var(--surface-3))_50%,hsl(var(--surface-2))_100%)] bg-[length:200%_100%] animate-admin-state-shimmer"></div>
+              <div class="h-3 w-20 rounded bg-[linear-gradient(90deg,hsl(var(--surface-2))_0%,hsl(var(--surface-3))_50%,hsl(var(--surface-2))_100%)] bg-[length:200%_100%] animate-admin-state-shimmer"></div>
+              <div class="h-3 w-24 rounded bg-[linear-gradient(90deg,hsl(var(--surface-2))_0%,hsl(var(--surface-3))_50%,hsl(var(--surface-2))_100%)] bg-[length:200%_100%] animate-admin-state-shimmer ml-auto"></div>
+            </div>
+
+            <!-- Body rows -->
+            {Array.from({ length: 6 }).map(() => (
+              <div class="flex items-center gap-3 py-3 border-b border-[hsl(var(--surface-3)/0.5)]">
+                <div class="h-4 w-12 rounded bg-[linear-gradient(90deg,hsl(var(--surface-2))_0%,hsl(var(--surface-3))_50%,hsl(var(--surface-2))_100%)] bg-[length:200%_100%] animate-admin-state-shimmer"></div>
+                <div class="flex items-center gap-2 w-40">
+                  <div class="h-7 w-7 shrink-0 rounded-full bg-[linear-gradient(90deg,hsl(var(--surface-2))_0%,hsl(var(--surface-3))_50%,hsl(var(--surface-2))_100%)] bg-[length:200%_100%] animate-admin-state-shimmer"></div>
+                  <div class="h-3 flex-1 rounded bg-[linear-gradient(90deg,hsl(var(--surface-2))_0%,hsl(var(--surface-3))_50%,hsl(var(--surface-2))_100%)] bg-[length:200%_100%] animate-admin-state-shimmer"></div>
+                </div>
+                <div class="h-3 w-24 rounded bg-[linear-gradient(90deg,hsl(var(--surface-2))_0%,hsl(var(--surface-3))_50%,hsl(var(--surface-2))_100%)] bg-[length:200%_100%] animate-admin-state-shimmer"></div>
+                <div class="h-3 w-16 rounded bg-[linear-gradient(90deg,hsl(var(--surface-2))_0%,hsl(var(--surface-3))_50%,hsl(var(--surface-2))_100%)] bg-[length:200%_100%] animate-admin-state-shimmer"></div>
+                <div class="h-6 w-20 rounded-full bg-[linear-gradient(90deg,hsl(var(--surface-2))_0%,hsl(var(--surface-3))_50%,hsl(var(--surface-2))_100%)] bg-[length:200%_100%] animate-admin-state-shimmer"></div>
+                <div class="h-3 w-28 rounded bg-[linear-gradient(90deg,hsl(var(--surface-2))_0%,hsl(var(--surface-3))_50%,hsl(var(--surface-2))_100%)] bg-[length:200%_100%] animate-admin-state-shimmer ml-auto"></div>
+              </div>
+            ))}
+          </div>
+
+          <!-- Pagination placeholder -->
+          <div class="flex items-center justify-between gap-3 py-3 px-[1.25rem] border-t border-[hsl(var(--surface-3))]">
+            <div class="h-3 w-32 rounded bg-[linear-gradient(90deg,hsl(var(--surface-2))_0%,hsl(var(--surface-3))_50%,hsl(var(--surface-2))_100%)] bg-[length:200%_100%] animate-admin-state-shimmer"></div>
+            <div class="flex items-center gap-2">
+              <div class="h-8 w-8 rounded-lg bg-[linear-gradient(90deg,hsl(var(--surface-2))_0%,hsl(var(--surface-3))_50%,hsl(var(--surface-2))_100%)] bg-[length:200%_100%] animate-admin-state-shimmer"></div>
+              <div class="h-8 w-8 rounded-lg bg-[linear-gradient(90deg,hsl(var(--surface-2))_0%,hsl(var(--surface-3))_50%,hsl(var(--surface-2))_100%)] bg-[length:200%_100%] animate-admin-state-shimmer"></div>
+            </div>
+          </div>
+          <span slot="footer">Loading reservations…</span>
+        </AdminPanel>
+      </div>
+    </ReservationsTable>
+  </AdminSidebar>
+</Layout>

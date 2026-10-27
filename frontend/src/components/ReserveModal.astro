@@ -1,0 +1,131 @@
+---
+// ReserveModal.astro
+//
+// A reusable modal dialog for reserving a parking spot in a zone.
+// The trigger for opening this modal lives on each ZoneCard (the
+// "Reserve Spot" button sets the modal's data attributes and then
+// `showModal()` is called from the parent page's client script).
+//
+// Modal contract (data attributes read by the client script):
+//   - data-reserve-modal              : root <dialog> element
+//   - data-zone-name                  : human-readable zone name (header)
+//   - data-zone-id                    : numeric zone id (form payload)
+//   - data-zone-type                  : 'ev_charging' | 'general' | 'covered'
+//   - data-zone-price                 : "₹50.00/hr" (header tag)
+//   - data-reserve-form               : the <form> element
+//   - data-license-plate              : the license-plate input
+//   - data-reserve-error              : inline error message container
+//   - data-reserve-submit             : submit button (show/hide spinner)
+//   - data-reserve-close              : cancel button
+---
+
+<dialog
+  data-reserve-modal
+  class="bg-transparent backdrop:bg-slate-950/70 backdrop:backdrop-blur-sm p-0 m-auto max-w-lg w-full"
+>
+  <div class="glass-card p-6 md:p-8 m-4 md:m-0 animate-fade-in">
+    <!-- Header -->
+    <header class="flex items-start justify-between gap-3 mb-6">
+      <div class="min-w-0">
+        <div class="flex items-center gap-2 mb-1">
+          <span class="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-emerald-500/15 border border-emerald-500/30">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 text-emerald-300" aria-hidden="true">
+              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+            </svg>
+          </span>
+          <h2 class="font-display text-xl font-bold text-slate-50 truncate" data-zone-name>
+            Reserve a Spot
+          </h2>
+        </div>
+        <p class="text-sm text-slate-400">
+          Lock in your spot. Enter your vehicle's license plate to confirm.
+        </p>
+      </div>
+      <button
+        type="button"
+        data-reserve-close
+        aria-label="Close reservation dialog"
+        class="text-slate-400 hover:text-slate-100 hover:bg-slate-800/60 focus:outline-none rounded-lg p-2 transition-all"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5" aria-hidden="true">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </header>
+
+    <!-- Zone summary chips -->
+    <div class="flex flex-wrap items-center gap-2 mb-6">
+      <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-slate-800/60 border border-slate-700/60 text-slate-200">
+        <span class="text-slate-400">Zone:</span>
+        <span data-zone-id-chip>#—</span>
+      </span>
+      <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-slate-800/60 border border-slate-700/60 text-slate-200" data-zone-type-chip>
+        —
+      </span>
+      <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-emerald-500/10 text-emerald-300 border border-emerald-500/30" data-zone-price-chip>
+        —
+      </span>
+    </div>
+
+    <!-- Error message (hidden until submit fails) -->
+    <div
+      data-reserve-error
+      class="hidden mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-300 text-sm flex items-start gap-2"
+      role="alert"
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 mt-0.5 flex-shrink-0" aria-hidden="true">
+        <circle cx="12" cy="12" r="10"></circle>
+        <line x1="12" y1="8" x2="12" y2="12"></line>
+        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+      </svg>
+      <span data-reserve-error-text>Something went wrong. Please try again.</span>
+    </div>
+
+    <!-- Reservation form -->
+    <form data-reserve-form class="space-y-4" novalidate>
+      <input type="hidden" data-zone-id-input name="zone_id" value="" />
+
+      <div>
+        <label for="reserve-license-plate" class="block text-sm font-semibold text-slate-200 mb-2">
+          Vehicle License Plate
+        </label>
+        <input
+          id="reserve-license-plate"
+          name="license_plate"
+          type="text"
+          placeholder="e.g. ABC-1234 or EV-101"
+          required
+          minlength="2"
+          maxlength="16"
+          autocomplete="off"
+          data-license-plate
+          class="w-full px-4 py-3 rounded-xl bg-slate-800/60 border border-slate-700/60 text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500/40 transition-all font-mono uppercase"
+        />
+        <p class="text-xs text-slate-500 mt-2">
+          We'll associate this plate with your booking for identification.
+        </p>
+      </div>
+
+      <div class="flex flex-col sm:flex-row gap-3 pt-2">
+        <button
+          type="button"
+          data-reserve-close
+          class="btn-ghost-glass flex-1"
+        >
+          Cancel
+        </button>
+        <button
+          type="submit"
+          data-reserve-submit
+          class="btn-neon flex-1 inline-flex items-center justify-center gap-2"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4" aria-hidden="true">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+          <span data-reserve-submit-label>Confirm Reservation</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</dialog>

@@ -1,0 +1,207 @@
+---
+// Admin modal for creating a parking zone.
+// Opening is delegated to any element carrying `data-open-create-zone`.
+---
+
+<dialog
+  data-create-zone-modal
+  aria-labelledby="create-zone-title"
+  class="w-full max-w-xl m-auto bg-transparent p-0 backdrop:bg-slate-950/75 backdrop:backdrop-blur-sm"
+>
+  <div class="glass-card m-4 p-6 animate-fade-in md:m-0 md:p-8">
+    <header class="mb-6 flex items-start justify-between gap-4">
+      <div>
+        <div class="mb-2 flex items-center gap-3">
+          <span class="flex h-10 w-10 items-center justify-center rounded-xl border border-emerald-400/30 bg-emerald-500/15 text-emerald-300">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5" aria-hidden="true">
+              <path d="M12 5v14"></path><path d="M5 12h14"></path>
+            </svg>
+          </span>
+          <div>
+            <p class="text-[0.65rem] font-bold uppercase tracking-[0.18em] text-emerald-300">Admin action</p>
+            <h2 id="create-zone-title" class="font-display text-2xl font-bold text-slate-50">Create parking zone</h2>
+          </div>
+        </div>
+        <p class="max-w-md text-sm text-slate-400">
+          Add capacity to SpotSync. New zones become available in the public catalog immediately.
+        </p>
+      </div>
+      <button type="button" data-close-create-zone aria-label="Close create zone dialog" class="rounded-lg p-2 text-slate-400 transition hover:bg-slate-800/70 hover:text-slate-100">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5" aria-hidden="true">
+          <path d="M18 6 6 18"></path><path d="m6 6 12 12"></path>
+        </svg>
+      </button>
+    </header>
+
+    <div data-create-zone-error class="mb-5 hidden items-start gap-2 rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-300" role="alert">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true">
+        <circle cx="12" cy="12" r="10"></circle><path d="M12 8v4"></path><path d="M12 16h.01"></path>
+      </svg>
+      <span data-create-zone-error-text>Please check the form and try again.</span>
+    </div>
+
+    <form data-create-zone-form class="space-y-5" novalidate>
+      <div>
+        <label for="create-zone-name" class="mb-2 block text-sm font-semibold text-slate-200">Zone name</label>
+        <input id="create-zone-name" name="name" type="text" required minlength="2" maxlength="100" autocomplete="off" placeholder="MG Road EV Hub" class="w-full rounded-xl border border-slate-700/70 bg-slate-800/60 px-4 py-3 text-slate-100 placeholder:text-slate-500 focus:border-emerald-500/50 focus:outline-none focus:ring-2 focus:ring-emerald-500/20" />
+      </div>
+
+      <div>
+        <label for="create-zone-type" class="mb-2 block text-sm font-semibold text-slate-200">Zone type</label>
+        <select id="create-zone-type" name="type" required class="w-full rounded-xl border border-slate-700/70 bg-slate-800/60 px-4 py-3 text-slate-100 focus:border-emerald-500/50 focus:outline-none focus:ring-2 focus:ring-emerald-500/20">
+          <option value="ev_charging">EV Charging</option>
+          <option value="general">General Parking</option>
+          <option value="covered">Covered Parking</option>
+        </select>
+      </div>
+
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div>
+          <label for="create-zone-capacity" class="mb-2 block text-sm font-semibold text-slate-200">Total capacity</label>
+          <input id="create-zone-capacity" name="total_capacity" type="number" required min="1" step="1" inputmode="numeric" placeholder="20" class="w-full rounded-xl border border-slate-700/70 bg-slate-800/60 px-4 py-3 text-slate-100 placeholder:text-slate-500 focus:border-emerald-500/50 focus:outline-none focus:ring-2 focus:ring-emerald-500/20" />
+        </div>
+        <div>
+          <label for="create-zone-price" class="mb-2 block text-sm font-semibold text-slate-200">Price per hour (INR)</label>
+          <div class="relative">
+            <span class="pointer-events-none absolute inset-y-0 left-4 flex items-center text-slate-500">₹</span>
+            <input id="create-zone-price" name="price_per_hour" type="number" required min="0.01" step="0.01" inputmode="decimal" placeholder="50.00" class="w-full rounded-xl border border-slate-700/70 bg-slate-800/60 py-3 pl-8 pr-4 text-slate-100 placeholder:text-slate-500 focus:border-emerald-500/50 focus:outline-none focus:ring-2 focus:ring-emerald-500/20" />
+          </div>
+        </div>
+      </div>
+
+      <div class="flex flex-col gap-3 pt-2 sm:flex-row">
+        <button type="button" data-close-create-zone class="btn-ghost-glass flex-1">Cancel</button>
+        <button type="submit" data-create-zone-submit class="btn-neon inline-flex flex-1 items-center justify-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4" aria-hidden="true"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg>
+          <span data-create-zone-submit-label>Create Zone</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</dialog>
+
+<script>
+  import { ROUTES, ZONE_TYPES } from "../lib/constants";
+  import { ApiError } from "../services/api";
+  import { createZone } from "../services/zoneService";
+  import { toast } from "../lib/toast";
+  import type { CreateZonePayload, ZoneType } from "../types/zone";
+
+  const dialog = document.querySelector<HTMLDialogElement>("[data-create-zone-modal]");
+  const form = document.querySelector<HTMLFormElement>("[data-create-zone-form]");
+  const errorBox = document.querySelector<HTMLElement>("[data-create-zone-error]");
+  const errorText = document.querySelector<HTMLElement>("[data-create-zone-error-text]");
+  const submitButton = document.querySelector<HTMLButtonElement>("[data-create-zone-submit]");
+  const submitLabel = document.querySelector<HTMLElement>("[data-create-zone-submit-label]");
+
+  function hideError(): void {
+    errorBox?.classList.add("hidden");
+    errorBox?.classList.remove("flex");
+  }
+
+  function showError(message: string): void {
+    if (errorText) errorText.textContent = message;
+    errorBox?.classList.remove("hidden");
+    errorBox?.classList.add("flex");
+  }
+
+  function setLoading(loading: boolean): void {
+    if (submitButton) submitButton.disabled = loading;
+    if (submitLabel) submitLabel.textContent = loading ? "Creating zone..." : "Create Zone";
+    submitButton?.classList.toggle("opacity-70", loading);
+    submitButton?.classList.toggle("cursor-wait", loading);
+  }
+
+  function closeDialog(): void {
+    dialog?.close();
+    hideError();
+  }
+
+  document.addEventListener("click", (event) => {
+    const target = event.target as HTMLElement | null;
+    if (!target) return;
+    if (target.closest("[data-open-create-zone]")) {
+      event.preventDefault();
+      hideError();
+      dialog?.showModal();
+      window.setTimeout(() => document.querySelector<HTMLInputElement>("#create-zone-name")?.focus(), 50);
+      return;
+    }
+    if (target.closest("[data-close-create-zone]")) closeDialog();
+  });
+
+  // Allow React islands (e.g. the Zones grid) to open the modal via a
+  // window-level custom event without coupling them to this Astro component.
+  window.addEventListener("spotsync:open-create-zone", () => {
+    hideError();
+    dialog?.showModal();
+    window.setTimeout(
+      () => document.querySelector<HTMLInputElement>("#create-zone-name")?.focus(),
+      50,
+    );
+  });
+
+  dialog?.addEventListener("click", (event) => {
+    if (event.target === dialog) closeDialog();
+  });
+
+  form?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    hideError();
+
+    const data = new FormData(form);
+    const name = String(data.get("name") ?? "").trim();
+    const type = String(data.get("type") ?? "") as ZoneType;
+    const totalCapacity = Number(data.get("total_capacity"));
+    const pricePerHour = Number(data.get("price_per_hour"));
+    const validTypes: readonly ZoneType[] = [
+      ZONE_TYPES.GENERAL,
+      ZONE_TYPES.EV_CHARGING,
+      ZONE_TYPES.COVERED,
+    ];
+
+    if (name.length < 2) {
+      showError("Zone name must contain at least 2 characters.");
+      return;
+    }
+    if (!validTypes.includes(type)) {
+      showError("Select a valid zone type.");
+      return;
+    }
+    if (!Number.isInteger(totalCapacity) || totalCapacity <= 0) {
+      showError("Total capacity must be a whole number greater than zero.");
+      return;
+    }
+    if (!Number.isFinite(pricePerHour) || pricePerHour <= 0) {
+      showError("Price per hour must be greater than zero.");
+      return;
+    }
+
+    const payload: CreateZonePayload = {
+      name,
+      type,
+      total_capacity: totalCapacity,
+      price_per_hour: pricePerHour,
+    };
+
+    setLoading(true);
+    try {
+      const zone = await createZone(payload);
+      form.reset();
+      closeDialog();
+      toast.success(`${zone.name} was created successfully.`);
+      window.dispatchEvent(new CustomEvent("spotsync:zone-created", { detail: zone }));
+    } catch (error) {
+      const message = error instanceof ApiError
+        ? error.message
+        : "Unable to create the zone. Please try again.";
+      showError(message);
+      toast.error(message);
+      if (error instanceof ApiError && error.status === 401) {
+        window.setTimeout(() => window.location.replace(ROUTES.LOGIN), 1000);
+      }
+    } finally {
+      setLoading(false);
+    }
+  });
+</script>

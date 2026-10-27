@@ -1,0 +1,116 @@
+---
+// index.astro — SpotSync home page (Zone catalog + value proposition).
+//
+// The page is built around the principle of "at-a-glance" comprehension:
+// a visitor should know what SpotSync is and how to use it within five
+// seconds of landing.
+//
+// Structure:
+//   1. Hero        — value proposition + quick action buttons
+//   2. Highlights  — three-glass-card feature banner (EV / Guaranteed / Live)
+//   3. Stats       — aggregate counters (zones, EV chargers, available spots)
+//   4. How it works — 3-step visual guide
+//   5. Catalog     — search + filter + zone grid + reserve modal
+//
+// Zone data is fetched server-side at build time so the first paint is
+// fully populated. The client script (under `scripts/home/`) wires up
+// search/filter/modal/refresh/rotation and preserves all original
+// behavior.
+
+import Layout from "@/layouts/Layout.astro";
+import HeroSection from "@/components/home/HeroSection.astro";
+import HighlightsSection from "@/components/home/HighlightsSection.astro";
+import StatsSection from "@/components/home/StatsSection.astro";
+import HowItWorksSection from "@/components/home/HowItWorksSection.astro";
+import ZoneCatalogSection from "@/components/home/ZoneCatalogSection.astro";
+import ReserveModal from "@/components/ReserveModal.astro";
+import { getZones } from "@/services/zoneService";
+import { getMockZones } from "@/services/mockZoneData";
+import { ApiError } from "@/services/api";
+import type { ParkingZone } from "@/types/zone";
+
+/**
+ * Source-selection flag.
+ *
+ * Drives how the zone CATALOG is sourced on the server.
+ *   - When `false` we hit the Go backend; only fall back to the in-memory
+ *     mock dataset on a network error (so the demo still renders).
+ *   - When `true` we use the mock dataset unconditionally.
+ *
+ * IMPORTANT: Reservation creation is ALWAYS routed to the real backend,
+ * regardless of this flag, so reservations persist to the database and
+ * show up correctly on the driver's "My Reservations" page. Mocking
+ * reservations would silently drop them and the My Reservations view
+ * would always render zero records.
+ */
+const USE_MOCK_DATA = false;
+
+let zones: ParkingZone[] = [];
+let fetchError: string | null = null;
+
+if (USE_MOCK_DATA) {
+  zones = await getMockZones();
+} else {
+  try {
+    zones = await getZones();
+  } catch (error) {
+    if (error instanceof ApiError) {
+      fetchError = error.message;
+    } else if (error instanceof Error) {
+      fetchError = error.message;
+    } else {
+      fetchError = "Could not load zones from the SpotSync API.";
+    }
+    zones = await getMockZones();
+  }
+}
+
+const totalZones = zones.length;
+const evZones = zones.filter((z) => z.type === "ev_charging");
+const totalEvCapacity = evZones.reduce(
+  (sum, z) => sum + z.total_capacity,
+  0,
+);
+const totalAvailableSpots = zones.reduce(
+  (sum, z) => sum + z.available_spots,
+  0,
+);
+const totalCapacity = zones.reduce((sum, z) => sum + z.total_capacity, 0);
+---
+
+<Layout title="SpotSync — Real-Time Smart Parking & EV Charging Hub">
+  <main class="relative overflow-hidden">
+    <!-- Ambient decorative blobs (preserved verbatim from the previous
+         inline markup; unique to this page so not extracted.) -->
+    <div aria-hidden="true" class="pointer-events-none absolute inset-0 -z-10">
+      <div class="absolute top-20 -left-20 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl"></div>
+      <div class="absolute top-1/3 -right-20 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl"></div>
+      <div class="absolute bottom-0 left-1/3 w-96 h-96 bg-purple-500/5 rounded-full blur-3xl"></div>
+    </div>
+
+    <HeroSection />
+    <HighlightsSection />
+    <StatsSection
+      totalZones={totalZones}
+      totalEvCapacity={totalEvCapacity}
+      evZoneCount={evZones.length}
+      totalAvailableSpots={totalAvailableSpots}
+      totalCapacity={totalCapacity}
+    />
+    <HowItWorksSection />
+    <ZoneCatalogSection zones={zones} fetchError={fetchError} />
+
+    <ReserveModal />
+  </main>
+</Layout>
+
+<script>
+  // Home page client controller.
+  //
+  // The previous single-file implementation was moved into focused
+  // modules under `@/scripts/home/`. Each module preserves the
+  // original behavior (search/filter, reserve modal, refetch,
+  // rotation, sync label) exactly. This entry point just boots the
+  // modules in order.
+  import "@/scripts/home/index";
+</script>

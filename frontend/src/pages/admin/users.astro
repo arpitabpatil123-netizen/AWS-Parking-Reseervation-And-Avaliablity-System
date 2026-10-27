@@ -1,0 +1,88 @@
+---
+/**
+ * Admin > Users (/admin/users)
+ *
+ * Thin shell — the live React island handles the table, role filter,
+ * and delete actions.
+ *
+ * `slot="fallback"` paints a loading skeleton that mirrors the final
+ * layout (KPI strip + role filter chips + user table) so admins
+ * see immediate content instead of an empty <main>.
+ */
+
+import Layout from "@/layouts/Layout.astro";
+import AdminSidebar from "@/components/admin/AdminSidebar.astro";
+import AdminPanel from "@/components/admin/AdminPanel.astro";
+import AdminKpiCard from "@/components/admin/AdminKpiCard.astro";
+import { UsersTable } from "@/components/admin/UsersTable";
+---
+
+<Layout
+  title="Users — SpotSync Admin"
+  description="Every registered user on SpotSync."
+>
+  <AdminSidebar
+    title="Users"
+    subtitle="Every registered user on SpotSync — drivers and administrators."
+  >
+    <UsersTable client:load>
+      <div
+        slot="fallback"
+        class="admin-skeleton flex flex-col gap-6"
+        aria-busy="true"
+        aria-label="Loading users"
+      >
+        <!-- KPI strip -->
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <AdminKpiCard label="Total Users" icon="users" accent="emerald" caption="All registered accounts" />
+          <AdminKpiCard label="Drivers" icon="drivers" accent="blue" caption="Booking spots" />
+          <AdminKpiCard label="Admins" icon="users" accent="purple" caption="Console operators" />
+        </div>
+
+        <!-- Table panel -->
+        <AdminPanel title="All users" subtitle="Search, filter by role, or remove access" flush>
+          <!-- Toolbar placeholder: search input + role filter chips -->
+          <div class="flex flex-wrap items-center gap-3 mb-5">
+            <div class="h-10 flex-1 min-w-[12rem] rounded-xl bg-[linear-gradient(90deg,hsl(var(--surface-2))_0%,hsl(var(--surface-3))_50%,hsl(var(--surface-2))_100%)] bg-[length:200%_100%] animate-admin-state-shimmer"></div>
+            <div class="flex items-center gap-2">
+              <div class="h-10 w-16 rounded-xl bg-[linear-gradient(90deg,hsl(var(--surface-2))_0%,hsl(var(--surface-3))_50%,hsl(var(--surface-2))_100%)] bg-[length:200%_100%] animate-admin-state-shimmer"></div>
+              <div class="h-10 w-20 rounded-xl bg-[linear-gradient(90deg,hsl(var(--surface-2))_0%,hsl(var(--surface-3))_50%,hsl(var(--surface-2))_100%)] bg-[length:200%_100%] animate-admin-state-shimmer"></div>
+              <div class="h-10 w-20 rounded-xl bg-[linear-gradient(90deg,hsl(var(--surface-2))_0%,hsl(var(--surface-3))_50%,hsl(var(--surface-2))_100%)] bg-[length:200%_100%] animate-admin-state-shimmer"></div>
+            </div>
+          </div>
+
+          <!-- Table skeleton -->
+          <div class="flex flex-col gap-2 pb-5 px-[1.25rem]">
+            <!-- Header row -->
+            <div class="flex items-center gap-3 py-2 border-b border-[hsl(var(--surface-3))]">
+              <div class="h-3 w-12 rounded bg-[linear-gradient(90deg,hsl(var(--surface-2))_0%,hsl(var(--surface-3))_50%,hsl(var(--surface-2))_100%)] bg-[length:200%_100%] animate-admin-state-shimmer"></div>
+              <div class="h-3 w-40 rounded bg-[linear-gradient(90deg,hsl(var(--surface-2))_0%,hsl(var(--surface-3))_50%,hsl(var(--surface-2))_100%)] bg-[length:200%_100%] animate-admin-state-shimmer"></div>
+              <div class="h-3 w-32 rounded bg-[linear-gradient(90deg,hsl(var(--surface-2))_0%,hsl(var(--surface-3))_50%,hsl(var(--surface-2))_100%)] bg-[length:200%_100%] animate-admin-state-shimmer"></div>
+              <div class="h-3 w-20 rounded bg-[linear-gradient(90deg,hsl(var(--surface-2))_0%,hsl(var(--surface-3))_50%,hsl(var(--surface-2))_100%)] bg-[length:200%_100%] animate-admin-state-shimmer"></div>
+              <div class="h-3 w-24 rounded bg-[linear-gradient(90deg,hsl(var(--surface-2))_0%,hsl(var(--surface-3))_50%,hsl(var(--surface-2))_100%)] bg-[length:200%_100%] animate-admin-state-shimmer ml-auto"></div>
+            </div>
+
+            <!-- Body rows -->
+            {Array.from({ length: 6 }).map(() => (
+              <div class="flex items-center gap-3 py-3 border-b border-[hsl(var(--surface-3)/0.5)]">
+                <div class="h-4 w-12 rounded bg-[linear-gradient(90deg,hsl(var(--surface-2))_0%,hsl(var(--surface-3))_50%,hsl(var(--surface-2))_100%)] bg-[length:200%_100%] animate-admin-state-shimmer"></div>
+                <div class="flex items-center gap-3 w-56">
+                  <div class="h-8 w-8 shrink-0 rounded-full bg-[linear-gradient(90deg,hsl(var(--surface-2))_0%,hsl(var(--surface-3))_50%,hsl(var(--surface-2))_100%)] bg-[length:200%_100%] animate-admin-state-shimmer"></div>
+                  <div class="flex flex-col gap-1.5 flex-1">
+                    <div class="h-3 w-3/4 rounded bg-[linear-gradient(90deg,hsl(var(--surface-2))_0%,hsl(var(--surface-3))_50%,hsl(var(--surface-2))_100%)] bg-[length:200%_100%] animate-admin-state-shimmer"></div>
+                    <div class="h-2.5 w-1/2 rounded bg-[linear-gradient(90deg,hsl(var(--surface-2))_0%,hsl(var(--surface-3))_50%,hsl(var(--surface-2))_100%)] bg-[length:200%_100%] animate-admin-state-shimmer"></div>
+                  </div>
+                </div>
+                <div class="h-3 w-32 rounded bg-[linear-gradient(90deg,hsl(var(--surface-2))_0%,hsl(var(--surface-3))_50%,hsl(var(--surface-2))_100%)] bg-[length:200%_100%] animate-admin-state-shimmer"></div>
+                <div class="h-6 w-20 rounded-full bg-[linear-gradient(90deg,hsl(var(--surface-2))_0%,hsl(var(--surface-3))_50%,hsl(var(--surface-2))_100%)] bg-[length:200%_100%] animate-admin-state-shimmer"></div>
+                <div class="h-8 w-8 rounded-lg bg-[linear-gradient(90deg,hsl(var(--surface-2))_0%,hsl(var(--surface-3))_50%,hsl(var(--surface-2))_100%)] bg-[length:200%_100%] animate-admin-state-shimmer ml-auto"></div>
+              </div>
+            ))}
+          </div>
+
+          <span slot="footer">Loading users…</span>
+        </AdminPanel>
+      </div>
+    </UsersTable>
+  </AdminSidebar>
+</Layout>

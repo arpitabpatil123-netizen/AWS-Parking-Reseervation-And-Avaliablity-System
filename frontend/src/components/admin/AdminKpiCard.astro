@@ -1,0 +1,150 @@
+---
+/**
+ * Admin KPI card.
+ *
+ * A compact metric tile used by every admin page. Renders a label,
+ * primary value, optional secondary value, optional icon, and an
+ * optional trend indicator. The visual style is consistent across
+ * the dashboard so KPI strips read as one cohesive set.
+ */
+
+interface Props {
+  /** Label shown above the value, e.g. "Total Reservations". */
+  label: string;
+  /** Icon name rendered inside the badge in the top-right corner. */
+  icon?: "users" | "drivers" | "reservations" | "zones" | "spots" | "available" | "cancelled" | "completed" | "active" | "revenue" | "calendar" | "chart";
+  /** Accent color used for the icon and decorative gradient. */
+  accent?: "emerald" | "blue" | "purple" | "amber" | "rose" | "slate";
+  /** Optional secondary caption shown below the value. */
+  caption?: string;
+  /** Optional delta string (e.g. "+12% this week"). Renders a small pill. */
+  delta?: string;
+  /** Delta tone — controls the color of the delta pill. */
+  deltaTone?: "up" | "down" | "neutral";
+  /** Optional data attribute hook so client scripts can update the value. */
+  dataKey?: string;
+}
+
+const {
+  label,
+  icon = "chart",
+  accent = "emerald",
+  caption,
+  delta,
+  deltaTone = "neutral",
+  dataKey,
+} = Astro.props as Props;
+
+// Tailwind arbitrary-value classes per accent. The HSL values are preserved
+// exactly as in the original CSS so the visual appearance stays identical.
+const accentMap: Record<string, {
+  bgClass: string;
+  borderClass: string;
+  textClass: string;
+  iconClass: string;
+}> = {
+  emerald: {
+    bgClass: "bg-[hsl(160_84%_39%/0.08)]",
+    borderClass: "border-[hsl(160_84%_39%/0.25)]",
+    textClass: "text-[hsl(160_84%_32%)]",
+    iconClass: "text-[hsl(160_84%_39%)]",
+  },
+  blue: {
+    bgClass: "bg-[hsl(217_91%_60%/0.08)]",
+    borderClass: "border-[hsl(217_91%_60%/0.25)]",
+    textClass: "text-[hsl(217_91%_50%)]",
+    iconClass: "text-[hsl(217_91%_55%)]",
+  },
+  purple: {
+    bgClass: "bg-[hsl(270_70%_60%/0.08)]",
+    borderClass: "border-[hsl(270_70%_60%/0.25)]",
+    textClass: "text-[hsl(270_70%_50%)]",
+    iconClass: "text-[hsl(270_70%_55%)]",
+  },
+  amber: {
+    bgClass: "bg-[hsl(38_92%_50%/0.08)]",
+    borderClass: "border-[hsl(38_92%_50%/0.25)]",
+    textClass: "text-[hsl(38_92%_40%)]",
+    iconClass: "text-[hsl(38_92%_50%)]",
+  },
+  rose: {
+    bgClass: "bg-[hsl(0_84%_60%/0.08)]",
+    borderClass: "border-[hsl(0_84%_60%/0.25)]",
+    textClass: "text-[hsl(0_84%_45%)]",
+    iconClass: "text-[hsl(0_84%_55%)]",
+  },
+  slate: {
+    bgClass: "bg-[hsl(215_20%_65%/0.08)]",
+    borderClass: "border-[hsl(215_20%_65%/0.25)]",
+    textClass: "text-[hsl(215_25%_27%)]",
+    iconClass: "text-[hsl(215_16%_47%)]",
+  },
+};
+const a = accentMap[accent] ?? accentMap.emerald;
+
+const deltaColor =
+  deltaTone === "up"
+    ? "text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border-emerald-500/30"
+    : deltaTone === "down"
+    ? "text-rose-600 dark:text-rose-400 bg-rose-500/10 border-rose-500/30"
+    : "text-slate-600 dark:text-slate-400 bg-slate-500/10 border-slate-500/30";
+---
+
+<div
+  class:list={[
+    "admin-kpi flex flex-col gap-2 p-[1.1rem] px-[1.25rem] rounded-[0.875rem] bg-[hsl(var(--surface-1))] border border-[hsl(var(--surface-3))] shadow-[0_1px_2px_hsl(0_0%_0%/0.04)] transition-all duration-200 hover:-translate-y-px hover:shadow-[0_6px_24px_hsl(0_0%_0%/0.08)]",
+    a.borderClass,
+  ]}
+  data-kpi-key={dataKey}
+>
+  <div class="admin-kpi__row flex items-center justify-between gap-2">
+    <span class:list={["admin-kpi__label text-[0.72rem] font-bold uppercase tracking-[0.08em]", a.textClass]}>{label}</span>
+    <span class:list={["admin-kpi__icon inline-flex items-center justify-center w-7 h-7 rounded-lg [&_svg]:w-4 [&_svg]:h-4", a.bgClass, a.iconClass]} aria-hidden="true">
+      {icon === "users" && (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+      )}
+      {icon === "drivers" && (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"></circle><path d="M4 21a8 8 0 0 1 16 0"></path></svg>
+      )}
+      {icon === "reservations" && (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+      )}
+      {icon === "zones" && (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"></rect><rect x="14" y="3" width="7" height="7" rx="1"></rect><rect x="14" y="14" width="7" height="7" rx="1"></rect><rect x="3" y="14" width="7" height="7" rx="1"></rect></svg>
+      )}
+      {icon === "spots" && (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 3"></path></svg>
+      )}
+      {icon === "available" && (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>
+      )}
+      {icon === "cancelled" && (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><line x1="9" y1="9" x2="15" y2="15"></line><line x1="15" y1="9" x2="9" y2="15"></line></svg>
+      )}
+      {icon === "completed" && (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"></path></svg>
+      )}
+      {icon === "active" && (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"></circle><circle cx="12" cy="12" r="9"></circle></svg>
+      )}
+      {icon === "revenue" && (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+      )}
+      {icon === "calendar" && (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+      )}
+      {icon === "chart" && (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+      )}
+    </span>
+  </div>
+  <p class="admin-kpi__value font-display font-bold text-[1.7rem] leading-[1.1] text-[hsl(var(--text-strong))] m-0 min-h-[1.85rem]" data-kpi-value={dataKey}>
+    <span class="admin-kpi__skeleton inline-block w-12 h-[1.4rem] rounded-[0.35rem] bg-[linear-gradient(90deg,hsl(var(--surface-2))_0%,hsl(var(--surface-3))_50%,hsl(var(--surface-2))_100%)] bg-[length:200%_100%] animate-kpi-shimmer" aria-hidden="true"></span>
+  </p>
+  <div class="admin-kpi__footer flex items-center justify-between gap-2 flex-wrap min-h-[1.25rem]">
+    {caption && <span class="admin-kpi__caption text-[0.75rem] text-[hsl(var(--text-muted))]">{caption}</span>}
+    {delta && (
+      <span class:list={[`admin-kpi__delta inline-flex items-center px-2 py-[0.15rem] rounded-full border text-[0.7rem] font-semibold`, deltaColor]}>{delta}</span>
+    )}
+  </div>
+</div>

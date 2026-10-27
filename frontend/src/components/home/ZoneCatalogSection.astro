@@ -1,0 +1,119 @@
+---
+// ZoneCatalogSection.astro
+//
+// SSR-rendered "Live Parking Catalog" container. Holds:
+//   - the section header + auto-sync label
+//   - the existing ZoneFilter component
+//   - the optional fetch-error notice
+//   - the empty-state card (when zones.length === 0)
+//   - the zone grid mount point with `data-zone-grid`
+//   - the no-results placeholder driven by the client controller
+//
+// The actual zone cards are rendered either server-side (initial load)
+// or by the home controller's `cardHtml` after a refetch. Both paths
+// target the same `[data-zone-grid]` container.
+
+import ZoneCard from "../ZoneCard.astro";
+import ZoneFilter from "../ZoneFilter.astro";
+import { ROUTES } from "../../lib/constants";
+import type { ParkingZone } from "../../types/zone";
+
+interface Props {
+  zones: ParkingZone[];
+  fetchError: string | null;
+}
+
+const { zones, fetchError } = Astro.props;
+
+// Display-only sort: zones with available spots first, full zones last.
+// This is purely a UI ordering — it does NOT mutate any input,
+// does not change availability calculations, and does not affect
+// the underlying booking/business logic. Within each group the
+// original order is preserved (stable sort via Array#sort).
+const sortedZones = [...zones].sort((a, b) => {
+  const aFull = (a.available_spots ?? 0) <= 0 ? 1 : 0;
+  const bFull = (b.available_spots ?? 0) <= 0 ? 1 : 0;
+  return aFull - bFull;
+});
+---
+
+<section id="zone-catalog" class="container mx-auto px-4 pb-24 scroll-mt-20">
+  <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-6">
+    <div>
+      <h2 class="font-display text-3xl md:text-4xl font-bold text-slate-50 mb-2">
+        Live Parking Catalog
+      </h2>
+      <p class="text-slate-400">
+        Browse every available zone. Capacity bars refresh in real time.
+      </p>
+    </div>
+    <div class="flex items-center gap-2 text-sm text-slate-400">
+      <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse-glow"></span>
+      <span data-sync-label>Auto-syncing — refreshes every 1 hour</span>
+    </div>
+  </div>
+
+  <div class="mb-6">
+    <ZoneFilter />
+  </div>
+
+  {fetchError && (
+    <div class="glass-card p-6 mb-6 border-red-500/40 bg-red-500/5">
+      <div class="flex items-start gap-3">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 text-red-300 flex-shrink-0 mt-0.5" aria-hidden="true">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="8" x2="12" y2="12"></line>
+          <line x1="12" y1="16" x2="12.01" y2="16"></line>
+        </svg>
+        <div>
+          <p class="text-red-200 font-semibold mb-1">Unable to load zones</p>
+          <p class="text-sm text-red-300/80">{fetchError}</p>
+          <p class="text-xs text-slate-400 mt-2">
+            Make sure the SpotSync backend is running at the URL configured in <code class="px-1 py-0.5 rounded bg-slate-800/60 text-slate-300">PUBLIC_API_BASE_URL</code>.
+          </p>
+        </div>
+      </div>
+    </div>
+  )}
+
+  {!fetchError && zones.length === 0 && (
+    <div class="glass-card p-12 text-center">
+      <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-slate-800/60 border border-slate-700/60 mb-4">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 text-slate-400" aria-hidden="true">
+          <rect width="7" height="7" x="3" y="3" rx="1"></rect>
+          <rect width="7" height="7" x="14" y="3" rx="1"></rect>
+          <rect width="7" height="7" x="14" y="14" rx="1"></rect>
+          <rect width="7" height="7" x="3" y="14" rx="1"></rect>
+        </svg>
+      </div>
+      <h3 class="font-display text-xl font-bold text-slate-100 mb-2">
+        No zones yet
+      </h3>
+      <p class="text-slate-400 max-w-md mx-auto mb-6">
+        The catalog is empty. An admin can create the first parking zone from the Admin Dashboard.
+      </p>
+      <a href={ROUTES.ADMIN} class="btn-neon inline-flex items-center gap-2">
+        Open Admin Dashboard
+      </a>
+    </div>
+  )}
+
+  {zones.length > 0 && (
+    <div
+      class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6"
+      data-zone-grid
+      id="zone-grid"
+    >
+      {sortedZones.map((zone) => <ZoneCard zone={zone} />)}
+    </div>
+  )}
+
+  <div
+    id="zone-no-results"
+    class="hidden glass-card p-10 text-center mt-6"
+    data-no-results
+  >
+    <p class="text-slate-300 font-semibold mb-1">No zones match your filters</p>
+    <p class="text-sm text-slate-500">Try selecting a different type or clearing your search.</p>
+  </div>
+</section>

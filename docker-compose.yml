@@ -1,0 +1,149 @@
+# =============================================================================
+# SpotSync - full-stack docker-compose (frontend -> backend -> postgres)
+# =============================================================================
+# Production-ready compose that orchestrates all three services of the
+# SpotSync stack on a single internal bridge network (`spotsync-net`).
+# The stack is intentionally ordered so each layer can only start after
+# the layer it depends on has passed its healthcheck:
+#
+#   frontend  (nginx:alpine + Astro static dist)
+#       |
+#       |  depends_on: api (service_healthy)
+#       v
+#   api       (Go + Echo + GORM)   -- listens on :8080 inside the network
+#       |
+#       |  depends_on: db  (service_healthy)
+#       v
+#   db        (postgres:16-alpine)
+#
+# Container-to-container traffic uses Docker's service-name DNS:
+#   - api    reaches the database as  db:5432   (NOT localhost)
+#   - the JS bundle baked into the frontend points at  http://api:8080/api/v1
+#     (NOT localhost) — `localhost` inside a container refers to the
+#     container itself, not the host, so we always use service names
+#     for inter-service traffic.
+#
+# Only the frontend (4321) and the API (8080) are exposed on the host.
+# The PostgreSQL port is intentionally NOT published — nothing outside
+# the `spotsync-net` bridge should be able to talk to the database
+# directly. Operators that need psql access can `docker exec` into the
+# `db` container or temporarily expose 127.0.0.1:5432 themselves.
+#
+# Usage:
+#   cp .env.docker.example .env.docker   # one-time
+#   docker compose --env-file .env.docker up -d --build
+#   docker compose --env-file .env.docker down -v
+# -----------------------------------------------------------------------------
+
+services:
+  # ---------- PostgreSQL ----------
+  db:
+    image: postgres:16-alpine
+    container_name: spotsync-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: spotsync
+      POSTGRES_PASSWORD: spotsync
+      POSTGRES_DB: spotsync
+      TZ: Asia/Kolkata
+    # No `ports:` — the database is internal-only. The api service
+    # reaches it via `db:5432` on the spotsync-net bridge.
+    volumes:
+      - spotsync_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      # pg_isready exits 0 when the server accepts connections; the -U/-d
+      # flags make sure the right role/database is online (not just any
+      # connection at all).
+      test: ["CMD-SHELL", "pg_isready -U spotsync -d spotsync"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - spotsync-net
+
+  # ---------- Go API ----------
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: spotsync-backend:latest
+    container_name: spotsync-api
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      APP_PORT: "8080"
+      TZ: Asia/Kolkata
+      # In-network DNS name. The api container resolves `db` to the
+      # postgres container's IP on spotsync-net. GORM's postgres driver
+      # handles sslmode=disable for this in-cluster connection.
+      DATABASE_URL: "postgresql://spotsync:spotsync@db:5432/spotsync?sslmode=disable"
+      # JWT_SECRET and FRONTEND_URL are read from .env.docker via
+      # `docker compose --env-file`. The Go config layer refuses to
+      # start without a JWT_SECRET (see internal/config/config.go).
+      JWT_SECRET: "${JWT_SECRET:?JWT_SECRET must be set in .env.docker}"
+      FRONTEND_URL: "${FRONTEND_URL:-http://localhost:4321}"
+    ports:
+      # 8080 is exposed on the host so operators / CI / docs can curl
+      # the API directly. A real user would only ever hit it via the
+      # frontend on 4321.
+      - "8080:8080"
+    healthcheck:
+      # In-cluster wget on the api container hits its own /health
+      # endpoint. Uses the GET method explicitly because wget's
+      # --spider defaults to HEAD, which Echo rejects with 405.
+      test: ["CMD", "wget", "--quiet", "--spider", "--method=GET", "--tries=1", "--timeout=4", "http://127.0.0.1:8080/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    networks:
+      - spotsync-net
+
+  # ---------- Astro frontend ----------
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      # PUBLIC_API_BASE_URL is inlined into the Astro JS bundle at build
+      # time (Vite behavior). Point it at the in-network service name
+      # `api` so the browser, once a page is loaded, fetches via docker
+      # service-name DNS. Do NOT bake `localhost` here — that would
+      # break in any containerized deployment.
+      args:
+        PUBLIC_API_BASE_URL: http://api:8080/api/v1
+    image: spotsync-frontend:latest
+    container_name: spotsync-frontend
+    restart: unless-stopped
+    depends_on:
+      api:
+        # Wait for the API to be healthy before accepting user traffic.
+        # The frontend itself doesn't make server-side requests — it
+        # serves static files — but we still want the api container
+        # ready before users start hitting the page so the very first
+        # browser-side fetch succeeds.
+        condition: service_healthy
+    ports:
+      # The frontend is the public surface (port 4321 matches
+      # astro.config.mjs's `server.port` and the README's documented
+      # URL).
+      - "4321:4321"
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--spider", "--tries=1", "--timeout=4", "http://127.0.0.1:4321/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - spotsync-net
+
+volumes:
+  spotsync_pgdata:
+    name: spotsync_pgdata
+
+networks:
+  spotsync-net:
+    name: spotsync-net
+    driver: bridge

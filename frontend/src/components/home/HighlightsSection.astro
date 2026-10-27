@@ -1,0 +1,55 @@
+---
+// HighlightsSection.astro
+//
+// Three-glass-card feature banner that sits below the hero on the home
+// page: EV Fast Charging / Guaranteed Spot / Live Capacity.
+//
+// Pure presentational: no client-side script.
+---
+
+<section class="container mx-auto px-4 pb-12">
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+    <div class="glass-card p-6 flex items-start gap-4">
+      <span class="inline-flex items-center justify-center w-11 h-11 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex-shrink-0">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 text-emerald-300" aria-hidden="true">
+          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+        </svg>
+      </span>
+      <div>
+        <h3 class="font-display text-lg font-bold text-slate-50 mb-1">EV Fast Charging</h3>
+        <p class="text-sm text-slate-400 leading-relaxed">
+          Real-time availability tracking for electric vehicle stations, so you never queue for a charger.
+        </p>
+      </div>
+    </div>
+
+    <div class="glass-card p-6 flex items-start gap-4">
+      <span class="inline-flex items-center justify-center w-11 h-11 rounded-xl bg-blue-500/15 border border-blue-500/30 flex-shrink-0">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 text-blue-300" aria-hidden="true">
+          <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"></path>
+        </svg>
+      </span>
+      <div>
+        <h3 class="font-display text-lg font-bold text-slate-50 mb-1">Guaranteed Spot</h3>
+        <p class="text-sm text-slate-400 leading-relaxed">
+          Instant lock & reservation with zero double-booking. Your spot is reserved the moment you confirm.
+        </p>
+      </div>
+    </div>
+
+    <div class="glass-card p-6 flex items-start gap-4">
+      <span class="inline-flex items-center justify-center w-11 h-11 rounded-xl bg-amber-500/15 border border-amber-500/30 flex-shrink-0">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 text-amber-300" aria-hidden="true">
+          <circle cx="12" cy="12" r="10"></circle>
+          <polyline points="12 6 12 12 16 14"></polyline>
+        </svg>
+      </span>
+      <div>
+        <h3 class="font-display text-lg font-bold text-slate-50 mb-1">Live Capacity</h3>
+        <p class="text-sm text-slate-400 leading-relaxed">
+          Dynamic visual progress bars showing exact spot availability, refreshed in real time.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>

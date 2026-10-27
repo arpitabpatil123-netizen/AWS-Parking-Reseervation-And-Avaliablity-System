@@ -1,0 +1,267 @@
+---
+// Top navigation bar for SpotSync.
+//
+// Server-rendered shell with a fully reactive client-side script tag
+// at the bottom of this file that subscribes to:
+//   1. The auth store (`$user`) via the React <UserMenu /> island for
+//      user/role/logout/profile controls.
+//   2. The theme store (`$theme`) for the sun/moon toggle button.
+//
+// Theme strategy:
+//   - The toggle is rendered server-side with a neutral label and a real
+//     visible icon that updates via the client script.
+//   - `applyTheme()` runs synchronously on every change so the
+//     `.dark` class flips on <html> instantly (no refresh required).
+//   - Persistence is handled by `themeStore` (localStorage).
+
+import UserMenu from "./nav/UserMenu.tsx";
+import { ROUTES } from "../lib/constants";
+
+interface Props {
+  /** Optional current pathname for marking the active link. */
+  pathname?: string;
+}
+
+const { pathname = Astro.url.pathname } = Astro.props;
+---
+
+<header class="glass-nav sticky top-0 z-50 w-full">
+  <nav class="container mx-auto px-4 h-16 flex items-center justify-between gap-4">
+    <!-- Brand logo -->
+    <a href={ROUTES.HOME} class="flex items-center gap-2 group" aria-label="SpotSync home">
+      <span
+        class="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center shadow-lg shadow-emerald-500/30 group-hover:shadow-emerald-500/50 transition-all"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          class="w-5 h-5 text-white"
+          aria-hidden="true"
+        >
+          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+        </svg>
+      </span>
+      <span class="font-display text-xl font-bold text-gradient-brand">
+        SpotSync
+      </span>
+    </a>
+
+    <!-- Center navigation links (role-aware) -->
+    <div class="hidden md:flex items-center gap-1" data-nav-links>
+      <a
+        href={ROUTES.MY_RESERVATIONS}
+        data-nav-link="my-reservations"
+        class:list={[
+          "px-4 py-2 rounded-lg text-sm font-medium transition-all",
+          pathname === ROUTES.MY_RESERVATIONS
+            ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-300 border border-emerald-500/30"
+            : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-200/60 dark:hover:bg-slate-800/60",
+        ]}
+      >
+        My Reservations
+      </a>
+      <a
+        href={ROUTES.ADMIN}
+        data-nav-link="admin"
+        class:list={[
+          "px-4 py-2 rounded-lg text-sm font-medium transition-all",
+          pathname === ROUTES.ADMIN
+            ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-300 border border-emerald-500/30"
+            : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-200/60 dark:hover:bg-slate-800/60",
+        ]}
+      >
+        Admin Dashboard
+      </a>
+    </div>
+
+    <!-- Right-side controls: theme toggle + React UserMenu island.
+         The island is `client:only="react"` because it reads from the
+         persistent auth store, which only exists in the browser. -->
+    <div class="flex items-center gap-2">
+      <!-- Theme toggle button. The visible icon is swapped by the script
+           based on the current $theme value. -->
+      <button
+        type="button"
+        data-action="theme-toggle"
+        class="theme-toggle"
+        aria-label="Toggle dark / light theme"
+        title="Toggle theme"
+      >
+        <!-- Sun icon (visible in dark mode — clicking switches to light) -->
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          class="w-5 h-5 hidden"
+          data-theme-icon="sun"
+          aria-hidden="true"
+        >
+          <circle cx="12" cy="12" r="4"></circle>
+          <path d="M12 2v2"></path>
+          <path d="M12 20v2"></path>
+          <path d="m4.93 4.93 1.41 1.41"></path>
+          <path d="m17.66 17.66 1.41 1.41"></path>
+          <path d="M2 12h2"></path>
+          <path d="M20 12h2"></path>
+          <path d="m4.93 19.07 1.41-1.41"></path>
+          <path d="m17.66 6.34 1.41-1.41"></path>
+        </svg>
+        <!-- Moon icon (visible in light mode — clicking switches to dark) -->
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          class="w-5 h-5 hidden"
+          data-theme-icon="moon"
+          aria-hidden="true"
+        >
+          <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
+        </svg>
+        <span class="sr-only" data-theme-label>Theme</span>
+      </button>
+
+      <!--
+        UserMenu island. Renders a circular avatar with a dropdown
+        menu (name, email, role, settings, logout).
+        We use `client:only` and provide a static SSR placeholder
+        below so the navbar never has an empty gap before React
+        mounts. The React component replaces this placeholder on
+        hydration.
+      -->
+      <UserMenu client:only="react">
+        <div
+          slot="fallback"
+          data-user-menu-fallback
+          class="flex items-center gap-2"
+        >
+          <a
+            href={ROUTES.LOGIN}
+            class="inline-flex h-9 items-center justify-center rounded-xl border border-slate-300 bg-white/70 px-4 text-sm font-medium text-slate-700 backdrop-blur-md transition-all hover:border-slate-400 hover:bg-white hover:text-slate-900 dark:border-slate-700/60 dark:bg-slate-900/40 dark:text-slate-200 dark:hover:border-slate-600 dark:hover:bg-slate-800/60 dark:hover:text-slate-50"
+          >
+            Sign In
+          </a>
+          <a
+            href={ROUTES.REGISTER}
+            class="inline-flex h-9 items-center justify-center rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 px-4 text-sm font-semibold text-white shadow-lg shadow-emerald-500/30 transition-all hover:from-emerald-400 hover:to-emerald-500 hover:shadow-emerald-500/50"
+          >
+            Register
+          </a>
+        </div>
+      </UserMenu>
+    </div>
+  </nav>
+</header>
+
+<script>
+  // Client-side hydration for the navbar (theme + nav-link visibility).
+  //
+  // Auth state is owned by the <UserMenu /> React island, which
+  // subscribes directly to the Nano Store. This script only has to
+  // keep the theme toggle and the role-aware nav links in sync.
+
+  import { $isAdmin, $isAuthenticated } from "../store/authStore";
+import {
+$theme,
+applyTheme,
+toggleTheme,
+type Theme,
+} from "../store/themeStore";
+
+  // ============================================================================
+  // Theme toggle
+  // ============================================================================
+
+  /**
+   * Sync the visible icon (sun vs moon) with the current theme.
+   * The DOM markers `data-theme-icon` are stable strings so the function
+   * can be re-run safely after every theme change.
+   */
+  function paintThemeIcons(theme: Theme): void {
+    const sun = document.querySelector<HTMLElement>('[data-theme-icon="sun"]');
+    const moon = document.querySelector<HTMLElement>('[data-theme-icon="moon"]');
+    const label = document.querySelector<HTMLElement>("[data-theme-label]");
+    if (sun) sun.classList.toggle("hidden", theme !== "dark");
+    if (moon) moon.classList.toggle("hidden", theme !== "light");
+    if (label) {
+      label.textContent = theme === "dark" ? "Switch to light mode" : "Switch to dark mode";
+    }
+  }
+
+  function bindThemeToggle(): void {
+    const button = document.querySelector<HTMLButtonElement>(
+      "[data-action='theme-toggle']",
+    );
+    if (!button) return;
+    button.addEventListener("click", () => {
+      const next = toggleTheme();
+      applyTheme(next);
+      paintThemeIcons(next);
+    });
+  }
+
+  // ============================================================================
+  // Role-aware nav links
+  // ============================================================================
+
+  /**
+   * Show / hide nav links based on the current auth + admin state.
+   * The "My Reservations" link is for any signed-in user; the
+   * "Admin Dashboard" link is admin-only.
+   */
+  function syncNavLinkVisibility(): void {
+    const adminLink = document.querySelector<HTMLAnchorElement>(
+      '[data-nav-link="admin"]',
+    );
+    if (adminLink) {
+      adminLink.classList.toggle("hidden", !$isAdmin.get());
+    }
+    const myResLink = document.querySelector<HTMLAnchorElement>(
+      '[data-nav-link="my-reservations"]',
+    );
+    if (myResLink) {
+      myResLink.classList.toggle("hidden", !$isAuthenticated.get());
+    }
+  }
+
+  // ============================================================================
+  // Bootstrap
+  // ============================================================================
+
+  // Paint initial theme iconography. The `dark` class is already on <html>
+  // from the pre-paint script in Layout.astro, so we just sync the icon.
+  paintThemeIcons($theme.get());
+  bindThemeToggle();
+
+  // Re-paint when the theme changes (also reflects changes from other tabs).
+  $theme.listen((next) => {
+    applyTheme(next);
+    paintThemeIcons(next);
+  });
+
+  // React to cross-tab theme changes via the storage event.
+  window.addEventListener("storage", (event) => {
+    if (event.key === "spotsync_theme") {
+      applyTheme($theme.get());
+      paintThemeIcons($theme.get());
+    }
+  });
+
+  // Auth state lives in the UserMenu React island, but the nav link
+  // visibility is still a navbar concern, so we subscribe here too.
+  syncNavLinkVisibility();
+  $isAuthenticated.listen(() => syncNavLinkVisibility());
+  $isAdmin.listen(() => syncNavLinkVisibility());
+</script>

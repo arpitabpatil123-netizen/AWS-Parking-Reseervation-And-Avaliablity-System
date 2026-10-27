@@ -1,0 +1,85 @@
+# =============================================================================
+# SpotSync backend - docker-compose
+# =============================================================================
+# Brings up the Go API together with a local PostgreSQL 16 instance so the
+# whole stack can be exercised without any external service.
+#
+# Usage:
+#   docker compose -f backend/docker-compose.yml --env-file backend/.env.docker up --build
+#   docker compose -f backend/docker-compose.yml --env-file backend/.env.docker down -v
+#
+# The Neon URL from the project's real .env is NOT used here - we point the
+# backend at the local postgres container so the verification is hermetic.
+# To use Neon instead, set DATABASE_URL in the env file and remove the
+# `db` service / dependency from the `api` service.
+# -----------------------------------------------------------------------------
+
+services:
+  # ---------- PostgreSQL ----------
+  db:
+    image: postgres:16-alpine
+    container_name: spotsync-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: spotsync
+      POSTGRES_PASSWORD: spotsync
+      POSTGRES_DB: spotsync
+      TZ: Asia/Kolkata
+    ports:
+      - "5432:5432"
+    volumes:
+      - spotsync_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U spotsync -d spotsync"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - spotsync-net
+
+  # ---------- Go API ----------
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: spotsync-backend:latest
+    container_name: spotsync-api
+    restart: unless-stopped
+    # Wait for the database healthcheck to pass before starting the API.
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      APP_PORT: "8080"
+      TZ: Asia/Kolkata
+      # Connect to the in-compose Postgres service. The username/password
+      # match the POSTGRES_* variables above. GORM's postgres driver handles
+      # sslmode=disable for the local container.
+      DATABASE_URL: "postgresql://spotsync:spotsync@db:5432/spotsync?sslmode=disable"
+      # JWT_SECRET and FRONTEND_URL are read from the env file passed via
+      # `--env-file backend/.env.docker`. We refuse to start without a
+      # JWT_SECRET by validating it here.
+      JWT_SECRET: "${JWT_SECRET}"
+      FRONTEND_URL: "${FRONTEND_URL:-http://localhost:4321}"
+    ports:
+      - "8080:8080"
+    healthcheck:
+      # Mirror the in-image healthcheck. wget's --spider issues HEAD by
+      # default which Echo rejects, so force --method=GET.
+      test: ["CMD", "wget", "--quiet", "--spider", "--method=GET", "--tries=1", "--timeout=4", "http://127.0.0.1:8080/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    networks:
+      - spotsync-net
+
+volumes:
+  spotsync_pgdata:
+    name: spotsync_pgdata
+
+networks:
+  spotsync-net:
+    name: spotsync-net
+    driver: bridge

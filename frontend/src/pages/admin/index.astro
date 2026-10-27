@@ -1,0 +1,92 @@
+---
+/**
+ * Admin > Overview (/admin)
+ *
+ * Thin shell — the live React island handles auth, data fetching, charts,
+ * and KPI cards. See `src/components/admin/OverviewDashboard.tsx`.
+ *
+ * The `slot="fallback"` block below renders a meaningful loading skeleton
+ * during SSR so the admin never sees an empty <main> while waiting for
+ * React to hydrate and `loadAdminData()` to resolve. The skeleton mirrors
+ * the final layout (KPI strip + chart panel + recent activity panel) so
+ * the transition to live data is visually seamless.
+ */
+
+import Layout from "@/layouts/Layout.astro";
+import AdminSidebar from "@/components/admin/AdminSidebar.astro";
+import AdminPanel from "@/components/admin/AdminPanel.astro";
+import AdminKpiCard from "@/components/admin/AdminKpiCard.astro";
+import { OverviewDashboard } from "@/components/admin/OverviewDashboard";
+---
+
+<Layout
+  title="Admin Overview — SpotSync"
+  description="A live snapshot of users, drivers, reservations, and parking availability."
+>
+  <AdminSidebar
+    title="Overview"
+    subtitle="Live snapshot of users, drivers, reservations, and parking availability."
+  >
+    <OverviewDashboard client:load>
+      <!-- ==================================================================
+           SSR fallback: rendered immediately, swapped out by React on mount.
+           Visual parity with the live dashboard keeps the page from
+           "popping" once data arrives.
+           ================================================================== -->
+      <div
+        slot="fallback"
+        class="admin-skeleton flex flex-col gap-6"
+        aria-busy="true"
+        aria-label="Loading overview dashboard"
+      >
+        <!-- KPI strip: 4 cards matching the live KPI tiles. -->
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <AdminKpiCard label="Total Users" icon="users" accent="emerald" caption="Across all roles" />
+          <AdminKpiCard label="Drivers" icon="drivers" accent="blue" caption="With reservations" />
+          <AdminKpiCard label="Reservations" icon="reservations" accent="purple" caption="All time" />
+          <AdminKpiCard label="Active Now" icon="active" accent="amber" caption="Currently parked" />
+        </div>
+
+        <!-- Chart panel: tall card with two skeleton blocks for the
+             area + bar chart row. -->
+        <AdminPanel title="Reservation activity" subtitle="Bookings and cancellations over time">
+          <div class="flex flex-col gap-4">
+            <div class="h-64 w-full rounded-xl bg-[linear-gradient(90deg,hsl(var(--surface-2))_0%,hsl(var(--surface-3))_50%,hsl(var(--surface-2))_100%)] bg-[length:200%_100%] animate-admin-state-shimmer"></div>
+            <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div class="h-48 w-full rounded-xl bg-[linear-gradient(90deg,hsl(var(--surface-2))_0%,hsl(var(--surface-3))_50%,hsl(var(--surface-2))_100%)] bg-[length:200%_100%] animate-admin-state-shimmer"></div>
+              <div class="h-48 w-full rounded-xl bg-[linear-gradient(90deg,hsl(var(--surface-2))_0%,hsl(var(--surface-3))_50%,hsl(var(--surface-2))_100%)] bg-[length:200%_100%] animate-admin-state-shimmer"></div>
+            </div>
+          </div>
+        </AdminPanel>
+
+        <!-- Recent activity panel: a few skeleton rows. -->
+        <AdminPanel title="Recent activity" subtitle="Latest reservations across the network">
+          <div class="flex flex-col gap-3">
+            <div class="flex items-center gap-3 p-3 rounded-xl bg-[hsl(var(--surface-2)/0.5)]">
+              <div class="h-10 w-10 shrink-0 rounded-lg bg-[linear-gradient(90deg,hsl(var(--surface-2))_0%,hsl(var(--surface-3))_50%,hsl(var(--surface-2))_100%)] bg-[length:200%_100%] animate-admin-state-shimmer"></div>
+              <div class="flex-1 flex flex-col gap-2">
+                <div class="h-3 w-1/3 rounded bg-[linear-gradient(90deg,hsl(var(--surface-2))_0%,hsl(var(--surface-3))_50%,hsl(var(--surface-2))_100%)] bg-[length:200%_100%] animate-admin-state-shimmer"></div>
+                <div class="h-2.5 w-1/2 rounded bg-[linear-gradient(90deg,hsl(var(--surface-2))_0%,hsl(var(--surface-3))_50%,hsl(var(--surface-2))_100%)] bg-[length:200%_100%] animate-admin-state-shimmer"></div>
+              </div>
+            </div>
+            <div class="flex items-center gap-3 p-3 rounded-xl bg-[hsl(var(--surface-2)/0.5)]">
+              <div class="h-10 w-10 shrink-0 rounded-lg bg-[linear-gradient(90deg,hsl(var(--surface-2))_0%,hsl(var(--surface-3))_50%,hsl(var(--surface-2))_100%)] bg-[length:200%_100%] animate-admin-state-shimmer"></div>
+              <div class="flex-1 flex flex-col gap-2">
+                <div class="h-3 w-1/4 rounded bg-[linear-gradient(90deg,hsl(var(--surface-2))_0%,hsl(var(--surface-3))_50%,hsl(var(--surface-2))_100%)] bg-[length:200%_100%] animate-admin-state-shimmer"></div>
+                <div class="h-2.5 w-2/5 rounded bg-[linear-gradient(90deg,hsl(var(--surface-2))_0%,hsl(var(--surface-3))_50%,hsl(var(--surface-2))_100%)] bg-[length:200%_100%] animate-admin-state-shimmer"></div>
+              </div>
+            </div>
+            <div class="flex items-center gap-3 p-3 rounded-xl bg-[hsl(var(--surface-2)/0.5)]">
+              <div class="h-10 w-10 shrink-0 rounded-lg bg-[linear-gradient(90deg,hsl(var(--surface-2))_0%,hsl(var(--surface-3))_50%,hsl(var(--surface-2))_100%)] bg-[length:200%_100%] animate-admin-state-shimmer"></div>
+              <div class="flex-1 flex flex-col gap-2">
+                <div class="h-3 w-2/5 rounded bg-[linear-gradient(90deg,hsl(var(--surface-2))_0%,hsl(var(--surface-3))_50%,hsl(var(--surface-2))_100%)] bg-[length:200%_100%] animate-admin-state-shimmer"></div>
+                <div class="h-2.5 w-1/3 rounded bg-[linear-gradient(90deg,hsl(var(--surface-2))_0%,hsl(var(--surface-3))_50%,hsl(var(--surface-2))_100%)] bg-[length:200%_100%] animate-admin-state-shimmer"></div>
+              </div>
+            </div>
+          </div>
+          <span slot="footer">Loading latest activity…</span>
+        </AdminPanel>
+      </div>
+    </OverviewDashboard>
+  </AdminSidebar>
+</Layout>

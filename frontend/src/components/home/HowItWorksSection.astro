@@ -1,0 +1,54 @@
+---
+// HowItWorksSection.astro
+//
+// Three-step explainer block on the home page. Pure presentational.
+---
+
+<section id="how-it-works" class="container mx-auto px-4 pb-16">
+  <div class="text-center mb-10">
+    <h2 class="font-display text-3xl md:text-4xl font-bold text-slate-50 mb-3">
+      How It Works
+    </h2>
+    <p class="text-slate-400 max-w-xl mx-auto">
+      Reserve a guaranteed spot in three simple steps. No accounts to create, no apps to install.
+    </p>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <div class="glass-card p-6 relative">
+      <span class="absolute -top-3 -left-3 w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 text-white font-bold flex items-center justify-center shadow-lg shadow-emerald-500/40">
+        1
+      </span>
+      <h3 class="font-display text-lg font-bold text-slate-50 mb-2 mt-2">
+        Locate Your Zone
+      </h3>
+      <p class="text-sm text-slate-400 leading-relaxed">
+        Search & filter by EV charging, general, or covered parking to find the spot that matches your needs.
+      </p>
+    </div>
+
+    <div class="glass-card p-6 relative">
+      <span class="absolute -top-3 -left-3 w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 text-white font-bold flex items-center justify-center shadow-lg shadow-blue-500/40">
+        2
+      </span>
+      <h3 class="font-display text-lg font-bold text-slate-50 mb-2 mt-2">
+        Reserve Your Spot
+      </h3>
+      <p class="text-sm text-slate-400 leading-relaxed">
+        Enter your vehicle plate number and lock your spot in seconds. The system guarantees no double-booking.
+      </p>
+    </div>
+
+    <div class="glass-card p-6 relative">
+      <span class="absolute -top-3 -left-3 w-9 h-9 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 text-white font-bold flex items-center justify-center shadow-lg shadow-purple-500/40">
+        3
+      </span>
+      <h3 class="font-display text-lg font-bold text-slate-50 mb-2 mt-2">
+        Park & Charge
+      </h3>
+      <p class="text-sm text-slate-400 leading-relaxed">
+        Drive directly to your assigned spot with guaranteed space. Manage your reservations anytime.
+      </p>
+    </div>
+  </div>
+</section>

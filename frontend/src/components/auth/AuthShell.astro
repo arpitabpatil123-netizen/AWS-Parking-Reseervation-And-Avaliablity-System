@@ -1,0 +1,162 @@
+---
+// AuthShell — a polished split-screen authentication layout used by the
+// login and register pages.
+//
+// Left pane: brand showcase + decorative animated gradients + value props.
+// Right pane: content slot (the actual form).
+//
+// On small screens the brand pane collapses and the form takes full width.
+//
+// Theming:
+//   All colours respond to the `.dark` class on <html> so the entire
+//   shell flips to dark mode (or back to light) the moment the navbar
+//   theme toggle is pressed. The component uses `bg-background` /
+//   `text-foreground` and `dark:` variants everywhere instead of
+//   hardcoded slate-* literals that would leak through theme changes.
+
+interface Props {
+  /** Page heading shown above the slot (e.g. "Sign in to SpotSync"). */
+  heading: string;
+  /**
+   * Optional substring inside `heading` to render with the brand
+   * gradient. Use this to highlight the brand name within a longer
+   * sentence without resorting to JSX fragments or HTML in props.
+   */
+  headingAccent?: string;
+  /** Sub-heading shown beneath the heading. */
+  subheading: string;
+  /** Accent color for the brand-side highlights. */
+  accent?: "emerald" | "blue";
+  /** Optional badge text above the heading (e.g. "Welcome back"). */
+  badge?: string;
+}
+
+const { heading, headingAccent, subheading, accent = "emerald", badge } = Astro.props;
+const accentRing = accent === "blue" ? "blue" : "emerald";
+---
+
+<div
+  class="auth-shell relative grid min-h-[calc(100vh-4rem)] grid-cols-1 bg-background lg:grid-cols-[1.05fr_1fr]"
+>
+  <!-- Brand showcase pane (compact strip on small screens, full panel on md+) -->
+  <aside
+    aria-hidden="true"
+    class="auth-brand relative flex items-center overflow-hidden border-b border-slate-200 bg-slate-50 px-4 py-3 md:border-b-0 md:border-r md:items-center md:justify-center md:px-10 md:py-10 md:border-slate-200 lg:px-12 lg:py-12 dark:border-slate-800/60 dark:bg-slate-950/80 dark:md:border-slate-800/60"
+  >
+    <div class="relative z-[2] w-full max-w-[440px] text-slate-700 dark:text-slate-200">
+
+      <div class="auth-brand-full hidden md:block md:mt-8">
+        <div class="mb-10">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="auth-quote-mark mb-2 h-8 w-8 text-emerald-500/70 dark:text-emerald-500/60">
+          <path d="M9.983 3v7.391c0 5.704 3.731 9.57 8.983 10.609l.598-2.426c-3.405-.661-5.66-2.766-5.66-6.183V11h5.65V3H9.983zm-9.983 0v7.391c0 5.704 3.748 9.57 9 10.609l.583-2.426C6.178 17.913 3.94 15.808 3.94 12.391V11h5.66V3H0z"></path>
+        </svg>
+        <p class="auth-quote-text font-display mb-6 text-2xl font-semibold leading-[1.35] text-slate-900 dark:text-slate-100">
+          Reserve a guaranteed parking or EV charging spot in under a minute.
+          Real-time availability, zero double-bookings.
+        </p>
+        <div class="auth-quote-stats flex items-center gap-4">
+          <div class="flex flex-col">
+            <span class="auth-stat-value font-display text-2xl font-bold leading-[1.1] text-emerald-600 dark:text-emerald-400">2.4M+</span>
+            <span class="auth-stat-label mt-1 text-[0.7rem] uppercase tracking-[0.06em] text-slate-500 dark:text-slate-400">Spots reserved</span>
+          </div>
+          <div class="auth-stat-divider h-8 w-px bg-slate-300 dark:bg-slate-700/50" aria-hidden="true"></div>
+          <div class="flex flex-col">
+            <span class="auth-stat-value font-display text-2xl font-bold leading-[1.1] text-emerald-600 dark:text-emerald-400">99.9%</span>
+            <span class="auth-stat-label mt-1 text-[0.7rem] uppercase tracking-[0.06em] text-slate-500 dark:text-slate-400">Uptime SLA</span>
+          </div>
+          <div class="auth-stat-divider h-8 w-px bg-slate-300 dark:bg-slate-700/50" aria-hidden="true"></div>
+          <div class="flex flex-col">
+            <span class="auth-stat-value font-display text-2xl font-bold leading-[1.1] text-emerald-600 dark:text-emerald-400">&lt;30s</span>
+            <span class="auth-stat-label mt-1 text-[0.7rem] uppercase tracking-[0.06em] text-slate-500 dark:text-slate-400">Avg. booking</span>
+          </div>
+        </div>
+      </div>
+
+      <ul class="auth-features mb-8 flex flex-col gap-4 p-0">
+        <li class="flex items-start gap-3.5">
+          <span class="auth-feature-icon auth-feature-icon-emerald inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-100 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-300 [&_svg]:h-[1.1rem] [&_svg]:w-[1.1rem]">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+          </span>
+          <div>
+            <p class="auth-feature-title mb-0.5 text-sm font-semibold text-slate-900 dark:text-slate-200">Real-Time Availability</p>
+            <p class="auth-feature-desc m-0 text-[0.78rem] leading-[1.4] text-slate-500 dark:text-slate-400">Live capacity across every zone, refreshed continuously.</p>
+          </div>
+        </li>
+        <li class="flex items-start gap-3.5">
+          <span class="auth-feature-icon auth-feature-icon-blue inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-100 text-blue-600 dark:bg-blue-500/15 dark:text-blue-300 [&_svg]:h-[1.1rem] [&_svg]:w-[1.1rem]">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+          </span>
+          <div>
+            <p class="auth-feature-title mb-0.5 text-sm font-semibold text-slate-900 dark:text-slate-200">Guaranteed Spot Lock</p>
+            <p class="auth-feature-desc m-0 text-[0.78rem] leading-[1.4] text-slate-500 dark:text-slate-400">Concurrent bookings are blocked at the database layer.</p>
+          </div>
+        </li>
+        <li class="flex items-start gap-3.5">
+          <span class="auth-feature-icon auth-feature-icon-amber inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-amber-100 text-amber-600 dark:bg-amber-500/15 dark:text-amber-300 [&_svg]:h-[1.1rem] [&_svg]:w-[1.1rem]">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.74 9.74 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+          </span>
+          <div>
+            <p class="auth-feature-title mb-0.5 text-sm font-semibold text-slate-900 dark:text-slate-200">Instant Cancellation</p>
+            <p class="auth-feature-desc m-0 text-[0.78rem] leading-[1.4] text-slate-500 dark:text-slate-400">Plans change. Free the spot with one click, no questions.</p>
+          </div>
+        </li>
+      </ul>
+
+      </div>
+
+      <p class="auth-brand-footer hidden items-center gap-2 text-xs text-slate-500 dark:text-slate-500 md:inline-flex">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-3.5 w-3.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+        Secured with industry-standard JWT encryption.
+      </p>
+    </div>
+
+    <!-- Decorative blurred orbs.
+         The orbs use the brand gradient (emerald/blue/purple) at low
+         alpha so they read as ambient glow on both light and dark
+         surfaces. In light mode we drop the alpha slightly so they
+         don't overpower the soft slate panel underneath. -->
+    <div
+      aria-hidden="true"
+      class="pointer-events-none absolute -left-[120px] -top-[120px] z-[1] h-[380px] w-[380px] animate-auth-orb-float rounded-full bg-[radial-gradient(circle,rgba(16,185,129,0.35),transparent_70%)] opacity-40 blur-[80px] dark:opacity-50 dark:bg-[radial-gradient(circle,rgba(16,185,129,0.45),transparent_70%)]"
+    ></div>
+    <div
+      aria-hidden="true"
+      class="pointer-events-none absolute -bottom-[100px] -right-[80px] z-[1] h-[320px] w-[320px] animate-auth-orb-float-reverse rounded-full bg-[radial-gradient(circle,rgba(59,130,246,0.30),transparent_70%)] opacity-40 blur-[80px] dark:opacity-50 dark:bg-[radial-gradient(circle,rgba(59,130,246,0.40),transparent_70%)]"
+    ></div>
+    <div
+      aria-hidden="true"
+      class="pointer-events-none absolute left-[55%] top-[45%] z-[1] h-[260px] w-[260px] animate-auth-orb-float rounded-full bg-[radial-gradient(circle,rgba(139,92,246,0.22),transparent_70%)] opacity-40 blur-[80px] dark:opacity-50 dark:bg-[radial-gradient(circle,rgba(139,92,246,0.30),transparent_70%)]"
+    ></div>
+  </aside>
+
+  <!-- Form pane (always visible) -->
+  <main class="flex items-center justify-center bg-background px-4 py-6 lg:px-8 lg:py-12">
+    <div class="flex w-full max-w-[440px] flex-col gap-7">
+      <div class="auth-form-header flex flex-col gap-3">
+        {badge && (
+          <span class={`inline-flex w-fit items-center gap-2 rounded-full border px-3 py-1.5 text-[0.7rem] font-semibold uppercase tracking-[0.06em] ${accentRing === "blue" ? "border-blue-500/35 bg-blue-500/10 text-blue-700 dark:text-blue-300" : "border-emerald-500/35 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"}`}>
+            <span class="inline-block h-1.5 w-1.5 animate-auth-dot-pulse rounded-full bg-current shadow-[0_0_8px_currentColor]"></span>
+            {badge}
+          </span>
+        )}
+        <h1 class="auth-heading m-0 font-display text-[2rem] font-bold leading-[1.15] text-slate-900 dark:text-slate-50 lg:text-[2.25rem]">
+          {headingAccent
+            ? heading.split(headingAccent).map((part, index, array) => (
+                index < array.length - 1
+                  ? (
+                      <>
+                        {part}
+                        <span class="text-gradient-brand">{headingAccent}</span>
+                      </>
+                    )
+                  : part
+              ))
+            : heading}
+        </h1>
+        <p class="auth-subheading m-0 text-[0.95rem] leading-[1.5] text-slate-600 dark:text-slate-400">{subheading}</p>
+      </div>
+
+      <slot />
+    </div>
+  </main>
+</div>

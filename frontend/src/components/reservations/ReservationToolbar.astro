@@ -1,0 +1,69 @@
+---
+// ReservationToolbar.astro
+//
+// Filter pills + search-by-plate input for the My Reservations page.
+// The `data-filter-tabs`/`data-filter` and `id="plate-search"` hooks
+// are preserved verbatim so the existing client controller continues
+// to bind identically.
+---
+
+<section
+  class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6"
+  data-toolbar
+>
+  <div
+    class="inline-flex items-center gap-1 p-1 bg-slate-900/60 border border-slate-800/80 rounded-xl shadow-inner"
+    role="tablist"
+    aria-label="Filter reservations by status"
+    data-filter-tabs
+  >
+    <button
+      type="button"
+      role="tab"
+      data-filter="all"
+      aria-selected="true"
+      class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold transition-all bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-lg shadow-emerald-500/30"
+    >
+      All
+    </button>
+    <button
+      type="button"
+      role="tab"
+      data-filter="active"
+      aria-selected="false"
+      class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold transition-all text-slate-300 hover:text-slate-100 hover:bg-slate-800/60"
+    >
+      <span class="w-1.5 h-1.5 rounded-full bg-emerald-400" aria-hidden="true"></span>
+      Active
+    </button>
+    <button
+      type="button"
+      role="tab"
+      data-filter="cancelled"
+      aria-selected="false"
+      class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold transition-all text-slate-300 hover:text-slate-100 hover:bg-slate-800/60"
+    >
+      <span class="w-1.5 h-1.5 rounded-full bg-slate-500" aria-hidden="true"></span>
+      Cancelled
+    </button>
+  </div>
+
+  <div class="relative w-full md:w-72">
+    <span
+      class="absolute inset-y-0 left-3 flex items-center text-slate-500 pointer-events-none"
+      aria-hidden="true"
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
+        <circle cx="11" cy="11" r="8"></circle>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+      </svg>
+    </span>
+    <input
+      type="search"
+      id="plate-search"
+      placeholder="Search by license plate..."
+      class="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-900/60 border border-slate-800/80 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-emerald-500/50 focus:ring-2 focus:ring-emerald-500/20 transition-all"
+      autocomplete="off"
+    />
+  </div>
+</section>

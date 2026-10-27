@@ -1,0 +1,198 @@
+---
+// Master layout for SpotSync.
+//
+// Responsibilities:
+//   1. HTML boilerplate + Google Fonts (Ubuntu) + global CSS import.
+//   2. Inject a small pre-paint script that adds `.dark` to <html> BEFORE
+//      the body renders, so the page never flashes the wrong theme.
+//   3. Slot for page content.
+//   4. Toast container + global toast helper.
+//
+// The toast helper is intentionally framework-free so it works equally
+// well in Astro page scripts and React components. Every toast:
+//   - Shows an inline SVG icon (Check / Alert / Info) matching its type.
+//   - Has a × close button that dismisses it immediately.
+//   - Animates in (slide-in-right) and out (slide-out-right).
+//   - Honors `prefers-reduced-motion: reduce`.
+//   - Caps visible toasts at MAX_VISIBLE — older toasts exit first.
+
+import "@/styles/global.css";
+import Navbar from "@/components/Navbar.astro";
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+
+const { title = "SpotSync — Smart Parking & EV Charging", description = "SpotSync is a modern parking and EV charging reservation platform." } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="description" content={description} />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="generator" content={Astro.generator} />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@300;400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <title>{title}</title>
+
+    {/* Pre-paint theme bootstrap.
+        Runs synchronously in <head> so the .dark class is on <html> before
+        the first paint — this avoids the flash of wrong theme (FOWT). The
+        same logic is shared with `src/store/themeStore.ts` so toggles from
+        the navbar stay consistent. */}
+    <script is:inline>
+      (function () {
+        try {
+          var stored = window.localStorage.getItem("spotsync_theme");
+          var theme = stored === "light" || stored === "dark"
+            ? stored
+            : (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches
+              ? "dark"
+              : "dark");
+          var root = document.documentElement;
+          if (theme === "dark") {
+            root.classList.add("dark");
+          } else {
+            root.classList.remove("dark");
+          }
+          root.style.colorScheme = theme;
+        } catch (e) {
+          // Defensive: if anything throws (SSR, broken storage), default to dark.
+          document.documentElement.classList.add("dark");
+        }
+      })();
+    </script>
+  </head>
+  <body class="min-h-screen text-slate-900 dark:text-slate-100 font-sans antialiased bg-background">
+    <Navbar pathname={Astro.url.pathname} />
+    <slot />
+
+    <!-- Toast notification container -->
+    <div id="toast-container" aria-live="polite" aria-atomic="true"></div>
+
+    <script>
+      // ============================================================================
+      // Global toast helper.
+      //
+      // Exposed as `window.showToast(message, type, duration)`. All app code
+      // should prefer the typed `toast` facade in `src/lib/toast.ts` which
+      // delegates to this function. Toasts rendered here:
+      //   - Include an inline SVG icon (success / error / info).
+      //   - Have a × close button that dismisses on click.
+      //   - Use `role="alert"` for errors and `role="status"` for others (a11y).
+      //   - Dismiss automatically after `duration` ms (default 3500ms).
+      //   - Cap visible toasts at MAX_VISIBLE.
+      //   - Honor `prefers-reduced-motion: reduce` (no slide animation).
+      // ============================================================================
+
+      const MAX_VISIBLE = 5;
+      const EXIT_DURATION_MS = 250;
+
+      type ToastType = "success" | "error" | "info";
+
+      interface ToastIconMap {
+        success: string;
+        error: string;
+        info: string;
+        close: string;
+      }
+
+      // Inline SVG strings keep the layout bundle-free (no `lucide-react`).
+      const ICONS: ToastIconMap = {
+        success:
+          '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>',
+        error:
+          '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m10.29 3.86-8.18 14a2 2 0 0 0 1.71 3h16.36a2 2 0 0 0 1.71-3l-8.18-14a2 2 0 0 0-3.42 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+        info:
+          '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>',
+        close:
+          '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
+      };
+
+      function prefersReducedMotion(): boolean {
+        return (
+          typeof window !== "undefined" &&
+          typeof window.matchMedia === "function" &&
+          window.matchMedia("(prefers-reduced-motion: reduce)").matches
+        );
+      }
+
+      function dismissToast(toast: HTMLElement): void {
+        if (toast.dataset.dismissing === "1") return;
+        toast.dataset.dismissing = "1";
+        if (prefersReducedMotion()) {
+          toast.remove();
+          return;
+        }
+        toast.classList.add("toast-exit");
+        window.setTimeout(() => {
+          toast.remove();
+        }, EXIT_DURATION_MS);
+      }
+
+      function showToast(
+        message: string,
+        type: ToastType = "info",
+        duration: number = 3500,
+      ): void {
+        const container = document.getElementById("toast-container");
+        if (!container) return;
+
+        // Enforce MAX_VISIBLE — oldest toasts exit first.
+        const existing = Array.from(container.querySelectorAll(".toast"));
+        if (existing.length >= MAX_VISIBLE) {
+          const overflow = existing.length - MAX_VISIBLE + 1;
+          for (let i = 0; i < overflow; i++) {
+            dismissToast(existing[i] as HTMLElement);
+          }
+        }
+
+        const toast = document.createElement("div");
+        toast.className = `toast toast-${type}`;
+        toast.setAttribute(
+          "role",
+          type === "error" ? "alert" : "status",
+        );
+        toast.setAttribute("aria-atomic", "true");
+
+        // Build the toast body with icon + text + close button.
+        const iconWrap = document.createElement("span");
+        iconWrap.className = "toast-icon";
+        iconWrap.innerHTML = ICONS[type] ?? ICONS.info;
+
+        const text = document.createElement("span");
+        text.className = "toast-text";
+        text.textContent = message;
+
+        const close = document.createElement("button");
+        close.type = "button";
+        close.className = "toast-close";
+        close.setAttribute("aria-label", "Dismiss notification");
+        close.innerHTML = ICONS.close;
+        close.addEventListener("click", () => dismissToast(toast));
+
+        toast.appendChild(iconWrap);
+        toast.appendChild(text);
+        toast.appendChild(close);
+        container.appendChild(toast);
+
+        // Auto-dismiss.
+        const timer = window.setTimeout(() => dismissToast(toast), duration);
+
+        // Cancel auto-dismiss if the user mouses over the toast (gives them
+        // time to read long messages).
+        toast.addEventListener("mouseenter", () => window.clearTimeout(timer));
+      }
+
+      window.showToast = showToast;
+    </script>
+  </body>
+</html>
