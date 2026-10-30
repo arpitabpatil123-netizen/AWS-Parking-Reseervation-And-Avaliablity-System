@@ -23,8 +23,17 @@ import type { ApiResponse } from "../types/api";
 // time (see frontend/.env.example). The localhost fallback exists only so
 // `astro dev` without a configured .env still runs against a local server;
 // production builds are expected to set the variable explicitly.
-const API_BASE_URL: string =
-  import.meta.env.PUBLIC_API_BASE_URL ?? DEFAULT_API_BASE_URL;
+function resolveApiBaseUrl(): string {
+  const configured = import.meta.env.PUBLIC_API_BASE_URL?.trim();
+
+  if (configured && /^https?:\/\//i.test(configured)) {
+    return configured.replace(/\/+$/, "");
+  }
+
+  return DEFAULT_API_BASE_URL;
+}
+
+const API_BASE_URL = resolveApiBaseUrl();
 
 /** LocalStorage key holding the JWT Bearer token written by authStore. */
 export const TOKEN_STORAGE_KEY = STORAGE_KEYS.TOKEN;

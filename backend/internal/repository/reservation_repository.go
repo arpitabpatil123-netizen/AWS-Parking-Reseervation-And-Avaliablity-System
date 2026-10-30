@@ -18,6 +18,8 @@ var (
 	// ErrZoneFull is returned when the parking zone has reached its total
 	// capacity and cannot accept any more active reservations.
 	ErrZoneFull = errors.New("parking zone is full")
+	// ErrZoneClosed is returned when a staff incident has closed the zone.
+	ErrZoneClosed = errors.New("parking zone is temporarily closed")
 )
 
 // ReservationRepository defines the persistence contract for Reservation records.
@@ -87,6 +89,9 @@ func (r *reservationRepository) CreateWithCapacityCheck(userID uint, zoneID uint
 			}
 			return err
 		}
+		if z.EmergencyClosed {
+			return ErrZoneClosed
+		}
 
 		// 2. Count active reservations for this zone (visible inside the tx).
 		var activeCount int64
@@ -96,26 +101,8 @@ func (r *reservationRepository) CreateWithCapacityCheck(userID uint, zoneID uint
 			return err
 		}
 
-		// 3. CAPACITY CHECK. Held spots (entries equal to 1 in spot_holds)
-		// are subtracted from capacity alongside real active reservations;
-		// they are truly off-limits for booking per the spec.
-		//
-		// We count the number of entries equal to 1, NOT len(spot_holds),
-		// because len(spot_holds) always equals total_capacity and would
-		// wrongly reject every reservation.
-		//
-		// If spot_holds is empty or its length does not match total_capacity
-		// (legacy row that has not yet been touched by EnsureSpotHoldsLength),
-		// fall back to 0 held spots — i.e. treat the zone as if it had no
-		// presentation-only holds. This is the safest assumption in a locked
-		// reservation transaction: better to allow a real reservation than to
-		// 409 a driver because of a missing bitmap.
-		holdCount := 0
-		if len(z.SpotHolds) == z.TotalCapacity {
-			holdCount = countHeldSpots(z.SpotHolds)
-		}
-
-		if int(activeCount)+holdCount >= z.TotalCapacity {
+		// 3. CAPACITY CHECK: only real active reservations count against capacity.
+		if int(activeCount) >= z.TotalCapacity {
 			return ErrZoneFull
 		}
 

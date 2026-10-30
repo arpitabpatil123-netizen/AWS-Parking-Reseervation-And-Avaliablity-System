@@ -1,14 +1,12 @@
 ---
 // Registration page (`/register`).
 //
-// Lets a brand-new visitor create either a Driver or Admin account.
-// Uses the shared AuthShell layout for consistent branding and the
-// RoleSelector component for an interactive role picker.
+// Public self-registration creates a driver account. Administrative
+// privileges are provisioned separately and are never user-selectable.
 
 import Layout from "@/layouts/Layout.astro";
 import AuthShell from "@/components/auth/AuthShell.astro";
 import AuthFormField from "@/components/auth/AuthFormField.astro";
-import RoleSelector from "@/components/auth/RoleSelector.astro";
 import PrimarySubmit from "@/components/auth/PrimarySubmit.astro";
 import { ROUTES } from "@/lib/constants";
 ---
@@ -18,19 +16,14 @@ import { ROUTES } from "@/lib/constants";
   <AuthShell
     heading="Create SpotSync account"
     headingAccent="SpotSync"
-    subheading="Reserve parking and EV charging spots in real time. Pick your role and you're ready in seconds."
+    subheading="Create an account to reserve parking and EV charging spots."
     accent="blue"
     badge="Get started"
   >
     <div class="flex flex-col gap-3">
-      <RoleSelector active="driver" />
-      <input id="role" name="role" type="hidden" value="driver" />
-    </div>
-
-    <div class="flex flex-col gap-3">
       <div class="inline-flex items-center gap-2 text-[0.78rem] font-semibold uppercase tracking-[0.06em] text-slate-700 dark:text-slate-300">
         <span class="inline-flex h-[1.4rem] w-[1.4rem] items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-emerald-600 text-[0.7rem] font-bold text-white shadow-[0_4px_12px_-3px_rgba(16,185,129,0.4)]">
-          2
+          1
         </span>
         <span>Your details</span>
       </div>
@@ -128,17 +121,15 @@ import { ROUTES } from "@/lib/constants";
 </Layout>
 
 <script>
-  import { ROUTES, USER_ROLES } from "../lib/constants";
+  import { ROUTES } from "../lib/constants";
   import { ApiError } from "../services/api";
 import { register } from "../services/authService";
-import type { UserRole } from "../types/auth";
 
   /* ---------- DOM lookups --------------------------------------------- */
   const form = document.getElementById("register-form") as HTMLFormElement;
   const nameInput = document.getElementById("name") as HTMLInputElement;
   const emailInput = document.getElementById("email") as HTMLInputElement;
   const passwordInput = document.getElementById("password") as HTMLInputElement;
-  const roleInput = document.getElementById("role") as HTMLInputElement;
   const termsInput = document.getElementById("accept-terms") as HTMLInputElement;
   const errorBox = document.getElementById("register-error") as HTMLDivElement;
   const errorMessage = errorBox.querySelector("[data-error-message]") as HTMLElement;
@@ -176,23 +167,6 @@ import type { UserRole } from "../types/auth";
         isHidden ? "Hide password" : "Show password",
       );
       btn.setAttribute("aria-pressed", String(isHidden));
-    });
-  });
-
-  /* ---------- Role card toggle -------------------------------------- */
-  const roleCards = document.querySelectorAll<HTMLButtonElement>("[data-role-card]");
-  roleCards.forEach((card) => {
-    card.addEventListener("click", () => {
-      const role = card.dataset.roleCard as UserRole | undefined;
-      if (!role) return;
-
-      roleInput.value = role;
-
-      roleCards.forEach((other) => {
-        const isActive = other === card;
-        other.dataset.roleActive = String(isActive);
-        other.setAttribute("aria-pressed", String(isActive));
-      });
     });
   });
 
@@ -239,7 +213,6 @@ import type { UserRole } from "../types/auth";
     const name = nameInput.value.trim();
     const email = emailInput.value.trim();
     const password = passwordInput.value;
-    const role = (roleInput.value || USER_ROLES.DRIVER) as UserRole;
 
     if (!name || name.length < 2) {
       showError("Please enter your full name (at least 2 characters).");
@@ -264,7 +237,7 @@ import type { UserRole } from "../types/auth";
 
     setLoading(true);
     try {
-      await register({ name, email, password, role });
+      await register({ name, email, password, role: "driver" });
 
       window.sessionStorage.setItem(
         "spotsync_auth_notice",

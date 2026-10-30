@@ -1,0 +1,21 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import AdminSidebar from "@/components/admin/AdminSidebar.astro";
+import { IncidentDashboard } from "@/components/admin/IncidentDashboard";
+---
+
+<Layout
+  title="Incident Management — SpotSync"
+  description="Report parking incidents, manage emergency zone closures, and notify affected drivers."
+>
+  <AdminSidebar
+    title="Incidents"
+    subtitle="Manage parking incidents, temporary closures, and driver alerts."
+  >
+    <IncidentDashboard client:load>
+      <div slot="fallback" class="rounded-2xl border border-slate-200 p-6 text-sm text-slate-500 dark:border-slate-800">
+        Loading incident management…
+      </div>
+    </IncidentDashboard>
+  </AdminSidebar>
+</Layout>

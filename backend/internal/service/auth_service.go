@@ -47,10 +47,9 @@ func NewAuthService(userRepo repository.UserRepository, jwtSecret string) AuthSe
 // Register creates a new user after ensuring the email is not already taken
 // and the password is securely hashed.
 func (s *authService) Register(req dto.RegisterRequest) (*dto.UserResponse, error) {
-	role := req.Role
-	if role == "" {
-		role = "driver"
-	}
+	// Public registration must never grant administrative or staff privileges.
+	// The role field is accepted for older clients but is intentionally ignored.
+	role := "driver"
 
 	// Reject duplicate emails with a stable sentinel error so the handler
 	// can return 400 Bad Request.

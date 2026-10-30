@@ -18,9 +18,14 @@ export type ZoneType = "general" | "ev_charging" | "covered";
 export interface ParkingZone {
   id: number;
   name: string;
+  location?: string;
   type: ZoneType;
   total_capacity: number;
   available_spots: number;
+  emergency_closed?: boolean;
+  emergency_closure_reason?: string;
+  emergency_status?: "Emergency Active" | "Temporarily Unavailable" | "Blocked" | "Restored" | string;
+  affected_spots?: number;
   /** Hourly price in Indian rupees (INR). */
   price_per_hour: number;
   /** Per-spot bitmap: 0 = available, 1 = reserved (held). */

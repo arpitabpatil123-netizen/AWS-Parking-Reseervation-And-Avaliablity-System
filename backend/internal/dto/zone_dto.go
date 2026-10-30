@@ -14,11 +14,16 @@ type CreateZoneRequest struct {
 // ZoneResponse is the public-facing representation of a ParkingZone, including
 // the dynamically computed AvailableSpots value.
 type ZoneResponse struct {
-	ID             uint   `json:"id"`
-	Name           string `json:"name"`
-	Type           string `json:"type"`
-	TotalCapacity  int    `json:"total_capacity"`
-	AvailableSpots int    `json:"available_spots"`
+	ID              uint      `json:"id"`
+	Name            string    `json:"name"`
+	Location        string    `json:"location"`
+	Type            string    `json:"type"`
+	TotalCapacity   int       `json:"total_capacity"`
+	AvailableSpots  int       `json:"available_spots"`
+	EmergencyClosed bool      `json:"emergency_closed"`
+	EmergencyStatus string    `json:"emergency_status,omitempty"`
+	ClosureReason   string    `json:"emergency_closure_reason,omitempty"`
+	AffectedSpots   int       `json:"affected_spots,omitempty"`
 	// PricePerHour is expressed in Indian rupees (INR).
 	PricePerHour float64 `json:"price_per_hour"`
 	// SpotHolds is a per-spot bitmap of length TotalCapacity. Element i

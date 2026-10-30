@@ -38,7 +38,8 @@ const NAME_MIN = 2;
 const NAME_MAX = 100;
 
 function roleLabel(role: UserRole): string {
-  return role === USER_ROLES.ADMIN ? "Admin" : "Driver";
+  if (role === USER_ROLES.ADMIN) return "Admin";
+  return role === "staff" ? "Staff" : "Driver";
 }
 
 function roleBadgeClass(role: UserRole): string {

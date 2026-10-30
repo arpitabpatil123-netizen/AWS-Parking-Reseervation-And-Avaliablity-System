@@ -21,22 +21,11 @@
 package seeder
 
 import (
-	"math"
-	"math/rand/v2"
-
 	"github.com/lib/pq"
 	"gorm.io/gorm"
 
 	"spotsync-backend/internal/models"
 )
-
-// holdPercentLow is the lower bound on the fraction of total_capacity
-// that must be held (random within the band).
-const holdPercentLow = 0.5
-
-// holdPercentHigh is the upper bound on the fraction of total_capacity
-// that must be held (random within the band).
-const holdPercentHigh = 0.6
 
 // RegenerateSpotHolds replaces a zone's spot_holds with a fresh random
 // array of length total_capacity. The number of held positions is
@@ -95,37 +84,5 @@ func generateSpotHolds(n int) []int64 {
 	if n <= 0 {
 		return []int64{}
 	}
-
-	lo := int(math.Floor(float64(n) * holdPercentLow))
-	hi := int(math.Ceil(float64(n) * holdPercentHigh))
-	if hi > n {
-		hi = n
-	}
-	if hi < lo {
-		hi = lo
-	}
-	// holdCount is the *number of held* positions. Random within [lo, hi].
-	holdCount := lo + rand.IntN(hi-lo+1)
-
-	holds := make([]int64, n)
-	for i := range holds {
-		holds[i] = 1
-	}
-
-	// Fisher-Yates in-place shuffle.
-	for i := len(holds) - 1; i > 0; i-- {
-		j := rand.IntN(i + 1)
-		holds[i], holds[j] = holds[j], holds[i]
-	}
-
-	// Flip the first (n - holdCount) to 0. The remaining entries stay 1.
-	availableCount := n - holdCount
-	if availableCount < 0 {
-		availableCount = 0
-	}
-	for i := 0; i < availableCount; i++ {
-		holds[i] = 0
-	}
-
-	return holds
+	return make([]int64, n)
 }

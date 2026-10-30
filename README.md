@@ -11,7 +11,8 @@ The demo catalog uses Bengaluru and Karnataka locations, prices are in INR per h
 The platform supports two first-class personas:
 
 - **Driver** — browse the zone catalog, reserve a spot, view and cancel their own reservations.
-- **Admin** — same as driver, plus create / update / delete zones, view all reservations, and manage users.
+- **Admin** — same as driver, plus create / update / delete zones, view all reservations, manage users, and manage incidents.
+- **Staff** — provisioned by an administrator for incident reporting and zone-closure management.
 
 ---
 
@@ -22,6 +23,9 @@ The platform supports two first-class personas:
 - JWT-based authentication with role-aware middleware (driver vs admin).
 - Public zone browsing, so the marketing surface of the home page never forces a login.
 - Reservation flow with concurrency safety (zone-full returns 409 Conflict).
+- Incident management for admins and provisioned staff, with auditable status history and emergency zone closures.
+- Persistent in-app alerts for drivers with active reservations affected by a zone incident; duplicate event alerts are prevented in PostgreSQL.
+- Emergency closures reduce public availability to zero and block bookings in the reservation transaction, independently of the background availability rotator.
 - Full admin console: KPIs, drivers, users, reservations, and zones grid.
 - Server-side rendering on the home page with first-paint populated from the Go API.
 - React islands for interactive surfaces (admin tables, reservation modal, profile settings).
@@ -283,7 +287,7 @@ The schema is owned by GORM models in `backend/internal/models/`. Auto-migration
 | `name` | `varchar(100)` | NOT NULL | Display name |
 | `email` | `varchar(150)` | UNIQUE, NOT NULL | Login / contact address |
 | `password` | `varchar(255)` | NOT NULL | bcrypt hash (excluded from JSON) |
-| `role` | `varchar(20)` | NOT NULL, default `'driver'` | One of `driver`, `admin` |
+| `role` | `varchar(20)` | NOT NULL, default `'driver'` | One of `driver`, `admin`, `staff` |
 | `created_at` | `timestamptz` | auto | Account creation timestamp |
 | `updated_at` | `timestamptz` | auto | Last profile update timestamp |
 
@@ -297,13 +301,15 @@ The schema is owned by GORM models in `backend/internal/models/`. Auto-migration
 | `total_capacity` | `integer` | NOT NULL | Maximum vehicles in this zone |
 | `price_per_hour` | `numeric(10,2)` | NOT NULL | Hourly price in INR |
 | `rotation_hold` | `integer` | NOT NULL, default `0` | Synthetic occupancy used by the ZoneRotator |
+| `emergency_closed` | `boolean` | NOT NULL, default `false` | Incident-managed closure; never changed by the ZoneRotator |
 | `created_at` | `timestamptz` | auto | Zone creation timestamp |
 | `updated_at` | `timestamptz` | auto | Last zone update timestamp |
 
 `available_spots` is **not** a stored column. It is computed by the repository on every read:
 
 ```
-available_spots = total_capacity - active_reservations - rotation_hold
+available_spots = 0, when emergency_closed
+otherwise max(0, total_capacity - count(spot_holds == 1) - active_reservations - rotation_hold)
 ```
 
 ### Table 3: `reservations`
@@ -326,6 +332,7 @@ users (1) ──< (N) reservations (N) >── (1) parking_zones
 
 Both foreign keys cascade on delete, so removing a user or a zone cleans up its reservations automatically.
 
+Incident management adds `incidents`, `incident_events`, and `notifications` tables. Incidents reference the affected zone and reporting staff member; event records retain status-change history. Notifications belong to their recipient and incident, and a unique `(user_id, incident_id, event_key)` constraint prevents duplicate alerts when an operation is retried. Auto-migration creates these structures on backend startup without deleting existing data.
 
 ## REST API Reference
 
@@ -335,7 +342,7 @@ Base URL: `/api/v1`. All endpoints accept and return JSON. Protected endpoints r
 
 | Method | Path | Body | Returns |
 | --- | --- | --- | --- |
-| `POST` | `/auth/register` | `{ name, email, password, role? }` | `{ token, user }` |
+| `POST` | `/auth/register` | `{ name, email, password }` | `{ token, user }` (public sign-up always creates a driver; administrative roles must not be self-selected) |
 | `POST` | `/auth/login` | `{ email, password }` | `{ token, user }` |
 
 ### Zones (public read)
@@ -358,6 +365,39 @@ Base URL: `/api/v1`. All endpoints accept and return JSON. Protected endpoints r
 | `POST` | `/reservations` | any user | Create a reservation. Returns `409 Conflict` if the zone is full. |
 | `PATCH` | `/reservations/:id/status` | any user | Update status to `active`, `completed`, or `cancelled` |
 | `DELETE` | `/reservations/:id` | any user | Delete a reservation |
+| | | | Zone closures are checked under the same row lock as reservation creation; closed zones return `409 Conflict`. |
+
+### Incidents (admin or provisioned staff)
+
+| Method | Path | Description |
+| --- | --- | --- |
+| `POST` | `/incidents` | Report an incident. Body: `{ zone_id, type, description, severity, closes_zone }`. The optional `Idempotency-Key` header makes retries safe. |
+| `GET` | `/incidents` | List incident history; accepts `status`, `severity`, `type`, and `zone_id` filters. |
+| `GET` | `/incidents/:id` | Retrieve incident details and audit history. |
+| `PATCH` | `/incidents/:id/status` | Update status and resolution notes; resolving the last active closure reopens the zone. |
+| `GET` | `/incidents/:id/affected-reservations` | List active reservations in the incident's zone. |
+
+Incident types: `emergency_closure`, `blocked_space`, `vehicle_obstruction`, `maintenance`, `safety`, and `other`. Severities: `low`, `medium`, `high`, and `critical`. Statuses: `open`, `in_progress`, `resolved`, and `cancelled`.
+
+### Driver notifications (authenticated)
+
+| Method | Path | Description |
+| --- | --- | --- |
+| `GET` | `/notifications/mine` | List only the caller's incident alerts. |
+| `PATCH` | `/notifications/:id/read` | Mark one of the caller's notifications as read. |
+
+The admin incident dashboard is `/admin/incidents`; drivers see parking alerts on `/my-reservations`. Emergency closures apply to a whole zone because the current reservation model has no individual spot identifiers. External email/SMS delivery is not configured.
+
+### Manually verify incident workflow
+
+1. Start PostgreSQL, the backend, and the Astro frontend using the Windows commands above.
+2. Sign in as the seeded administrator at `/login` (`admin@spotsync.com`, `adminpassword`) and open `/admin/incidents`.
+3. Sign in as a driver in another browser profile and create an active reservation in a zone that currently has capacity.
+4. As the administrator, report a **Critical** `emergency_closure` incident for that zone. Confirm the zone's public availability becomes zero and the reservation endpoint rejects new bookings with `409`.
+5. As the affected driver, open `/my-reservations` and confirm the alert appears. Mark it read and confirm it is no longer marked unread.
+6. As the administrator, change the incident to **Resolved**, add resolution notes, and confirm the zone is available again (unless another active closure remains).
+
+Staff accounts are not created through public registration. To provision a trusted staff account in a local development database, first create a regular account, then run `UPDATE users SET role = 'staff' WHERE email = 'trusted-staff@example.com';` using an authorized PostgreSQL administrator. Never expose a role-change operation through public signup.
 
 ### Auth roster (admin only)
 

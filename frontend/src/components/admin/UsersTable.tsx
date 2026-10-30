@@ -35,6 +35,7 @@ const ROLE_FILTERS: Array<{ key: UserRole | "all"; label: string }> = [
   { key: "all", label: "All" },
   { key: "driver", label: "Drivers" },
   { key: "admin", label: "Admins" },
+  { key: "staff", label: "Staff" },
 ];
 
 export function UsersTable() {

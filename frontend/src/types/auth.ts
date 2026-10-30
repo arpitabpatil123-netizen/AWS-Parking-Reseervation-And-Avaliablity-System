@@ -6,7 +6,7 @@
  */
 
 /** Role discriminator for the two first-class user personas in SpotSync. */
-export type UserRole = "driver" | "admin";
+export type UserRole = "driver" | "admin" | "staff";
 
 /**
  * Authenticated user record returned by /auth/login and /auth/register.
@@ -35,7 +35,7 @@ export interface RegisterPayload {
   name: string;
   email: string;
   password: string;
-  role: UserRole;
+  role: Exclude<UserRole, "staff">;
 }
 
 /**

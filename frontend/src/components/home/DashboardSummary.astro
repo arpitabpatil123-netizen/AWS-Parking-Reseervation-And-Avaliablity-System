@@ -1,0 +1,139 @@
+---
+// DashboardSummary.astro
+//
+// Compact 3-card summary section displaying:
+//   1. Available Spaces (Green)
+//   2. Occupied Spaces (Blue)
+//   3. Emergency Zones (Red)
+//
+// Designed to replace the previous oversized stats section with a
+// clean, modern parking-management dashboard summary.
+
+import type { ParkingZone } from "../../types/zone";
+
+interface Props {
+  zones: ParkingZone[];
+}
+
+const { zones } = Astro.props;
+
+const totalCapacity = zones.reduce((s, z) => s + (z.total_capacity ?? 0), 0);
+const availableSpaces = zones.reduce((s, z) => s + (z.emergency_closed ? 0 : (z.available_spots ?? 0)), 0);
+const occupiedSpaces = zones.reduce((s, z) => {
+  if (Array.isArray(z.spot_holds)) {
+    return s + z.spot_holds.filter((h) => h === 1).length;
+  }
+  return s + (z.emergency_closed ? 0 : Math.max(0, (z.total_capacity ?? 0) - (z.available_spots ?? 0)));
+}, 0);
+const emergencyZones = zones.filter((z) => z.emergency_closed === true);
+const emergencyCount = emergencyZones.length;
+
+const availablePercent = totalCapacity > 0 ? Math.round((availableSpaces / totalCapacity) * 100) : 0;
+const occupiedPercent = totalCapacity > 0 ? Math.round((occupiedSpaces / totalCapacity) * 100) : 0;
+---
+
+<section class="mb-6" aria-label="System Capacity Summary">
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
+    <!-- Available Spaces Card (Green) -->
+    <div
+      class="glass-card p-4 rounded-2xl border-emerald-500/30 bg-gradient-to-br from-emerald-500/10 via-emerald-500/5 to-transparent flex items-center justify-between gap-4 transition-all hover:border-emerald-500/50 hover:shadow-lg hover:shadow-emerald-500/10"
+    >
+      <div class="min-w-0">
+        <p class="text-xs uppercase tracking-wider text-emerald-400 font-semibold mb-1 flex items-center gap-1.5">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+          Available Spaces
+        </p>
+        <div class="flex items-baseline gap-2">
+          <p class="font-display text-2xl md:text-3xl font-bold text-white tracking-tight" data-summary="availableSpaces">
+            {availableSpaces}
+          </p>
+          <span class="text-xs text-emerald-300/80 font-medium" data-summary="availablePercent">
+            {availablePercent}% open
+          </span>
+        </div>
+        <p class="text-[11px] text-slate-400 mt-1 truncate">
+          Instant reservation ready
+        </p>
+      </div>
+
+      <div class="w-11 h-11 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-300 flex-shrink-0 shadow-inner">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5">
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+          <polyline points="22 4 12 14.01 9 11.01"></polyline>
+        </svg>
+      </div>
+    </div>
+
+    <!-- Occupied Spaces Card (Blue) -->
+    <div
+      class="glass-card p-4 rounded-2xl border-blue-500/30 bg-gradient-to-br from-blue-500/10 via-blue-500/5 to-transparent flex items-center justify-between gap-4 transition-all hover:border-blue-500/50 hover:shadow-lg hover:shadow-blue-500/10"
+    >
+      <div class="min-w-0">
+        <p class="text-xs uppercase tracking-wider text-blue-400 font-semibold mb-1 flex items-center gap-1.5">
+          <span class="w-1.5 h-1.5 rounded-full bg-blue-400"></span>
+          Occupied Spaces
+        </p>
+        <div class="flex items-baseline gap-2">
+          <p class="font-display text-2xl md:text-3xl font-bold text-white tracking-tight" data-summary="occupiedSpaces">
+            {occupiedSpaces}
+          </p>
+          <span class="text-xs text-blue-300/80 font-medium" data-summary="occupiedPercent">
+            {occupiedPercent}% in use
+          </span>
+        </div>
+        <p class="text-[11px] text-slate-400 mt-1 truncate">
+          of {totalCapacity} total capacity
+        </p>
+      </div>
+
+      <div class="w-11 h-11 rounded-xl bg-blue-500/20 border border-blue-500/30 flex items-center justify-center text-blue-300 flex-shrink-0 shadow-inner">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5">
+          <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"></path>
+          <circle cx="7" cy="17" r="2"></circle>
+          <path d="M9 17h6"></path>
+          <circle cx="17" cy="17" r="2"></circle>
+        </svg>
+      </div>
+    </div>
+
+    <!-- Emergency Zones Card (Red) -->
+    <div
+      class="glass-card p-4 rounded-2xl border-red-500/30 bg-gradient-to-br from-red-500/10 via-red-500/5 to-transparent flex items-center justify-between gap-4 transition-all hover:border-red-500/50 hover:shadow-lg hover:shadow-red-500/10"
+    >
+      <div class="min-w-0">
+        <p class="text-xs uppercase tracking-wider text-red-400 font-semibold mb-1 flex items-center gap-1.5">
+          <span class="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse"></span>
+          Emergency Zones
+        </p>
+        <div class="flex items-baseline gap-2">
+          <p class="font-display text-2xl md:text-3xl font-bold text-white tracking-tight" data-summary="emergencyCount">
+            {emergencyCount}
+          </p>
+          <span
+            class:list={[
+              "text-xs font-semibold px-2 py-0.5 rounded-full border",
+              emergencyCount > 0
+                ? "bg-red-500/20 text-red-300 border-red-500/40"
+                : "bg-emerald-500/20 text-emerald-300 border-emerald-500/40",
+            ]}
+            data-summary="emergencyBadge"
+          >
+            {emergencyCount > 0 ? `${emergencyCount} Restricted` : "All Clear"}
+          </span>
+        </div>
+        <p class="text-[11px] text-slate-400 mt-1 truncate" data-summary="emergencyDescription">
+          {emergencyCount > 0 ? "Offline for maintenance or safety" : "Normal operations across all zones"}
+        </p>
+      </div>
+
+      <div class="w-11 h-11 rounded-xl bg-red-500/20 border border-red-500/30 flex items-center justify-center text-red-300 flex-shrink-0 shadow-inner">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5">
+          <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+          <line x1="12" y1="9" x2="12" y2="13"></line>
+          <line x1="12" y1="17" x2="12.01" y2="17"></line>
+        </svg>
+      </div>
+    </div>
+  </div>
+</section>
+

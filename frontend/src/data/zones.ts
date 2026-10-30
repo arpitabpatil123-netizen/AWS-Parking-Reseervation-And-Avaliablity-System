@@ -95,26 +95,18 @@ const ZONE_SPECS: ZoneSpec[] = [
  * seed is just the first paint.
  */
 export function buildSeedZones(): ParkingZone[] {
-  const total = ZONE_SPECS.length;
-  const availableCount = Math.round(total * 0.6); // 24 zones available
-
   return ZONE_SPECS.map((spec, index) => {
-    const isAvailable = index < availableCount;
-    const available_spots = isAvailable
-      ? Math.max(1, Math.round(spec.total_capacity * (0.5 + Math.random() * 0.5)))
-      : 0;
-    // Build a placeholder spot_holds array that matches total_capacity
-    // so the type satisfies ParkingZone. The runtime layer
-    // (mockZoneData.ts) regenerates spot_holds on first read so the
-    // first paint shows realistic per-spot availability rather than
-    // whatever we put here.
+    const id = index + 1;
+    const available_spots = spec.total_capacity;
     const spot_holds: number[] = new Array(spec.total_capacity).fill(0);
+
     const zone: ParkingZone = {
-      id: index + 1,
+      id,
       name: spec.name,
       type: spec.type,
       total_capacity: spec.total_capacity,
       available_spots,
+      emergency_closed: false,
       price_per_hour: spec.price_per_hour,
       spot_holds,
       created_at: SEED_TIMESTAMP,

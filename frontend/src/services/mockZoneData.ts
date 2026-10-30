@@ -27,7 +27,7 @@
  */
 
 import type { ParkingZone } from "../types/zone";
-import { SEED_ZONES, TOTAL_ZONE_COUNT } from "../data/zones";
+import { SEED_ZONES } from "../data/zones";
 
 /* -------------------------------------------------------------------------- */
 /* Configuration                                                              */
@@ -78,157 +78,29 @@ let lastRotationAt: number = Date.now();
 /* -------------------------------------------------------------------------- */
 
 /**
- * Choose a random available_spots count in the band
- * `[floor(N/2), ceil(N*0.6)]` where N is the zone's total capacity.
- * This is the spec-mandated per-zone availability range — roughly
- * half to 60% available, leaving 40-50% reserved. For N=18 this
- * yields available ∈ [9, 11].
- */
-function pickAvailableSpots(totalCapacity: number): number {
-  if (totalCapacity <= 0) return 0;
-  const lo = Math.floor(totalCapacity / 2);
-  const hi = Math.ceil(totalCapacity * 0.6);
-  if (hi < lo) return lo;
-  return lo + Math.floor(Math.random() * (hi - lo + 1));
-}
-
-/**
- * Build a per-spot holds bitmap of length totalCapacity with a random
- * number of held positions (1s). The held count lives in
- * `[floor(N*0.4), ceil(N*0.5)]` — equivalent to "available ∈
- * [floor(N/2), ceil(N*0.6)]" inverted — so the two halves of the
- * mock mirror each other and the spec invariant is preserved.
- *
- * Algorithm (matches the backend seeder exactly):
- *   1. Build []number of length N, all 1s (held).
- *   2. Fisher-Yates shuffle.
- *   3. Flip the first (N - holdCount) entries to 0 (available).
- *
- * Returns an empty array for N <= 0.
+ * Build a per-spot holds bitmap of length totalCapacity initialised to all 0s (empty parking spaces).
  */
 function generateSpotHolds(totalCapacity: number): number[] {
   if (totalCapacity <= 0) return [];
-  const n = totalCapacity;
-  const lo = Math.floor(n * 0.4); // held lower bound
-  const hi = Math.ceil(n * 0.5);  // held upper bound
-  const hiClamped = Math.min(hi, n);
-  const holdCount = lo + Math.floor(Math.random() * (hiClamped - lo + 1));
-
-  const holds: number[] = new Array(n).fill(1);
-
-  // Fisher-Yates in-place shuffle.
-  for (let i = holds.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [holds[i], holds[j]] = [holds[j], holds[i]];
-  }
-
-  // Flip the first (n - holdCount) entries to 0.
-  const availableCount = Math.max(0, n - holdCount);
-  for (let i = 0; i < availableCount; i++) {
-    holds[i] = 0;
-  }
-
-  return holds;
-}
-
-/**
- * Fisher-Yates shuffle (in-place). Returns the same array.
- * We use this to randomise which zones are available/full each tick.
- */
-function shuffle<T>(arr: T[]): T[] {
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [arr[i], arr[j]] = [arr[j], arr[i]];
-  }
-  return arr;
+  return new Array(totalCapacity).fill(0);
 }
 
 /* -------------------------------------------------------------------------- */
-/* Rotation logic                                                             */
+/* Rotation logic (disabled so zones remain empty until reserved)             */
 /* -------------------------------------------------------------------------- */
 
-/**
- * Rotate the live zone dataset, preserving the 60/40 invariant.
- *
- * Algorithm:
- *   1. Split zones into [available, full] by current availability.
- *   2. Compute the targets — we want ~60% available, ~40% full.
- *   3. If the current split already matches, just shuffle to move
- *      *which* zones are in each bucket (instant variety).
- *   4. If the split is off (e.g. after many reservations), move
- *      a few zones from the over-full bucket to the over-available
- *      one to restore the 60/40 balance.
- *   5. Pick a fresh `available_spots` count for each newly available zone.
- *
- * Returns the new live array (also mutates internal state).
- */
 export function rotateAvailability(): ParkingZone[] {
-  const availableTarget = Math.round(TOTAL_ZONE_COUNT * AVAILABLE_TARGET_PERCENT);
-  const fullTarget = TOTAL_ZONE_COUNT - availableTarget;
-
-  const available = liveZones.filter((z) => z.available_spots > 0);
-  const full = liveZones.filter((z) => z.available_spots === 0);
-
-  // Pick a random subset of full zones to flip -> available.
-  const fullToFlip = Math.max(0, availableTarget - available.length);
-  // Pick a random subset of currently-available zones to flip -> full.
-  const availableToFlip = Math.max(0, available.length - availableTarget);
-
-  shuffle(full);
-  shuffle(available);
-
-  // Flip a few zones back to available.
-  for (let i = 0; i < fullToFlip && i < full.length; i++) {
-    const zone = full[i];
-    zone.available_spots = pickAvailableSpots(zone.total_capacity);
-    zone.spot_holds = generateSpotHolds(zone.total_capacity);
-  }
-
-  // Flip a few zones to full.
-  for (let i = 0; i < availableToFlip && i < available.length; i++) {
-    const zone = available[i];
-    zone.available_spots = 0;
-    zone.spot_holds = generateSpotHolds(zone.total_capacity);
-  }
-
-  // Even when the targets match exactly, shuffle which zones are
-  // in each bucket so the catalog visibly changes every hour.
-  // (We trim or grow available[] to exactly hit the target.)
-  if (available.length === availableTarget && fullToFlip === 0 && availableToFlip === 0) {
-    const swapCount = Math.min(4, full.length, available.length);
-    for (let i = 0; i < swapCount; i++) {
-      // Move one from available to full...
-      const a = available[i];
-      a.available_spots = 0;
-      a.spot_holds = generateSpotHolds(a.total_capacity);
-      // ...and a different one from full to available.
-      const f = full[i];
-      f.available_spots = pickAvailableSpots(f.total_capacity);
-      f.spot_holds = generateSpotHolds(f.total_capacity);
-    }
-  }
-
   lastRotationAt = Date.now();
   // Return a defensive copy so callers can't mutate internal state.
   return liveZones.map((z) => ({ ...z }));
 }
 
 /**
- * Boot the rotation timer. Safe to call on the server (no-op when
- * `window === undefined`).
- *
- * Returns the timer handle so tests can clear it; production callers
- * don't need it.
+ * Boot the rotation timer (disabled: availability only changes on reservation).
  */
-export function startRotationTimer(intervalMs: number = ROTATION_INTERVAL_MS): void {
-  if (typeof window === "undefined") return;
-  if (rotationTimer !== null) return; // already running
-
-  rotationTimer = setInterval(() => {
-    rotateAvailability();
-    // Fire a DOM event so the page can react without tight coupling.
-    window.dispatchEvent(new CustomEvent("spotsync:zones-rotated"));
-  }, intervalMs);
+export function startRotationTimer(_intervalMs: number = ROTATION_INTERVAL_MS): void {
+  // Rotator disabled: parking zone availability is purely determined by
+  // vehicle reservations and cannot be mutated by background timers.
 }
 
 /**
@@ -291,6 +163,13 @@ export async function createMockReservation(
     err.status = 404;
     throw err;
   }
+  if (zone.emergency_closed) {
+    const err = new Error(
+      zone.emergency_closure_reason || "This zone is temporarily closed due to an emergency incident."
+    ) as Error & { status: number };
+    err.status = 409;
+    throw err;
+  }
   if (zone.available_spots <= 0) {
     const err = new Error("This zone is full. Please choose another.") as Error & {
       status: number;
@@ -301,6 +180,12 @@ export async function createMockReservation(
 
   // Atomic-ish decrement.
   zone.available_spots -= 1;
+  if (Array.isArray(zone.spot_holds)) {
+    const firstFree = zone.spot_holds.indexOf(0);
+    if (firstFree !== -1) {
+      zone.spot_holds[firstFree] = 1;
+    }
+  }
 
   const record = {
     id: nextReservationId++,
@@ -333,6 +218,12 @@ export async function cancelMockReservation(
   const zone = liveZones.find((z) => z.id === entry.zone_id);
   if (zone && zone.available_spots < zone.total_capacity) {
     zone.available_spots += 1;
+    if (Array.isArray(zone.spot_holds)) {
+      const lastHeld = zone.spot_holds.lastIndexOf(1);
+      if (lastHeld !== -1) {
+        zone.spot_holds[lastHeld] = 0;
+      }
+    }
   }
   return delay({ ok: true });
 }

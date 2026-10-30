@@ -107,112 +107,15 @@ func (r *ZoneRotator) Start(ctx context.Context) {
 	}()
 }
 
-// RotateOnce performs a single rotation cycle. Exposed so tests and
-// the auto-migration hook can trigger a rotation on demand.
-//
-// Algorithm:
-//  1. Load every zone.
-//  2. Bucket into [available, full] based on rotation_hold == 0.
-//  3. Compute the target counts (60% available, 40% full).
-//  4. Move zones between buckets to hit the target.
-//  5. Persist with a single UPDATE.
+// RotateOnce resets any rotation holds to ensure zones are not artificially held full.
+// Natural availability is determined solely by total_capacity minus active reservations.
 func (r *ZoneRotator) RotateOnce() error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	var zones []models.ParkingZone
-	if err := r.db.Select("id", "total_capacity", "rotation_hold").
-		Order("id ASC").
-		Find(&zones).Error; err != nil {
-		return err
-	}
-	if len(zones) == 0 {
-		return nil
-	}
-
-	availableTarget := int(float64(len(zones)) * availablePercent)
-	fullTarget := len(zones) - availableTarget
-
-	// Split into buckets. A zone is "available" when its rotation_hold
-	// is zero (the natural state). It is "full" when rotation_hold
-	// equals total_capacity (the rotator-blocked state).
-	var available []models.ParkingZone
-	var full []models.ParkingZone
-	for _, z := range zones {
-		if z.RotationHold == 0 {
-			available = append(available, z)
-		} else {
-			full = append(full, z)
-		}
-	}
-
-	// Shuffle both buckets so the swap is non-deterministic.
-	r.shuffleLocked(available)
-	r.shuffleLocked(full)
-
-	// Move zones to hit the target counts.
-	needMoreAvailable := availableTarget - len(available)
-	if needMoreAvailable > 0 {
-		// Flip some full zones -> available.
-		n := minInt(needMoreAvailable, len(full))
-		for i := 0; i < n; i++ {
-			full[i].RotationHold = 0
-			available = append(available, full[i])
-		}
-		full = full[n:]
-	}
-	needMoreFull := fullTarget - len(full)
-	if needMoreFull > 0 {
-		// Flip some available zones -> full.
-		n := minInt(needMoreFull, len(available))
-		for i := 0; i < n; i++ {
-			available[i].RotationHold = available[i].TotalCapacity
-			full = append(full, available[i])
-		}
-		available = available[n:]
-	}
-
-	// When the split already matches, swap a few zones between buckets
-	// so the visible state changes every hour.
-	if needMoreAvailable == 0 && needMoreFull == 0 {
-		swapCount := minInt(4, minInt(len(available), len(full)))
-		for i := 0; i < swapCount; i++ {
-			available[i].RotationHold = available[i].TotalCapacity
-			full[i].RotationHold = 0
-		}
-	}
-
-	// Persist the changes in a single bulk UPDATE per zone. We do
-	// per-row updates instead of CASE WHEN because the column count
-	// is small (40) and the per-row approach is easier to reason about
-	// under errors.
-	updates := append(append([]models.ParkingZone{}, available...), full...)
-	for _, z := range updates {
-		if err := r.db.Model(&models.ParkingZone{}).
-			Where("id = ?", z.ID).
-			Update("rotation_hold", z.RotationHold).Error; err != nil {
-			return err
-		}
-	}
-
-	availCount := len(available)
-	log.Printf("[rotator] %d zones available / %d full (target: %d/%d)",
-		availCount, len(full), availableTarget, fullTarget)
-
-	// Per spec §3.6: every hourly tick reshuffles which specific spot
-	// positions are held. This runs on every tick (regardless of whether
-	// the 60/40 zone-level split actually flipped) so the visible
-	// per-spot grid churns hourly.
-	//
-	// Note: RegenerateSpotHolds uses math/rand/v2 internally, which is
-	// safe for concurrent use, so we don't need to share r.mu with it.
-	for _, z := range zones {
-		if err := RegenerateSpotHolds(r.db, z.ID); err != nil {
-			return err
-		}
-	}
-
-	return nil
+	return r.db.Model(&models.ParkingZone{}).
+		Where("rotation_hold > 0").
+		Update("rotation_hold", 0).Error
 }
 
 // shuffleLocked performs an in-place Fisher-Yates shuffle. The caller

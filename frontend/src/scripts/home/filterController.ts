@@ -1,112 +1,173 @@
 /**
- * Filter + search controller for the home-page zone catalog.
- *
- * Behavior preserved verbatim from the previous inline `applyFilters`,
- * `bindFilterTabs`, and `bindSearchInput` implementations in
- * `index.astro`. All selectors (`[data-zone-grid]`, `[data-zone-card]`,
- * `[data-zone-search]`, `[data-filter-tab]`, `[data-no-results]`) are
- * preserved so the SSR-rendered ZoneFilter + ZoneCatalogSection markup
- * continues to bind identically.
- */
+// filterController.ts
+//
+// Enhanced filter & search controller for the user dashboard.
+// Requirements:
+//   - Search by zone name, location, or ID
+//   - Status filters: All Zones, Available, Full, Emergency
+//   - Category type filters: All, EV Charging, General, Covered
+//   - Cross-linking with dashboard navigation tabs
+*/
 
 import type { ParkingZone } from "../../types/zone";
-import { ZONE_TYPES } from "../../lib/constants";
 
-type ActiveFilter = "all" | ParkingZone["type"];
+export type StatusFilter = "all" | "available" | "full" | "emergency";
+export type TypeFilter = "all" | ParkingZone["type"];
 
-const VALID_FILTERS: ReadonlySet<ActiveFilter> = new Set<ActiveFilter>([
-  "all",
-  ZONE_TYPES.GENERAL,
-  ZONE_TYPES.EV_CHARGING,
-  ZONE_TYPES.COVERED,
-]);
+let activeStatusFilter: StatusFilter = "all";
+let activeTypeFilter: TypeFilter = "all";
 
-function parseFilterTab(raw: string | undefined): ActiveFilter {
-  if (raw && VALID_FILTERS.has(raw as ActiveFilter)) {
-    return raw as ActiveFilter;
-  }
-  return "all";
+export function getActiveStatusFilter(): StatusFilter {
+  return activeStatusFilter;
 }
 
-let activeFilter: ActiveFilter = "all";
+export function getActiveTypeFilter(): TypeFilter {
+  return activeTypeFilter;
+}
 
-function applyFilters(): void {
+export function setStatusFilter(filter: StatusFilter): void {
+  activeStatusFilter = filter;
+  // Sync UI button styles
+  const buttons = document.querySelectorAll<HTMLButtonElement>("[data-status-filter]");
+  buttons.forEach((btn) => {
+    const isActive = btn.dataset.statusFilter === filter;
+    btn.setAttribute("aria-selected", isActive ? "true" : "false");
+    btn.classList.toggle("active", isActive);
+    btn.classList.toggle("bg-emerald-500/15", isActive && filter !== "emergency");
+    btn.classList.toggle("text-emerald-300", isActive && filter !== "emergency");
+    btn.classList.toggle("border-emerald-500/40", isActive && filter !== "emergency");
+    btn.classList.toggle("bg-red-500/20", isActive && filter === "emergency");
+    btn.classList.toggle("text-red-200", isActive && filter === "emergency");
+    btn.classList.toggle("border-red-500/50", isActive && filter === "emergency");
+    btn.classList.toggle("bg-slate-800/40", !isActive);
+    btn.classList.toggle("text-slate-300", !isActive);
+    btn.classList.toggle("border-slate-700/60", !isActive);
+  });
+  applyFilters();
+}
+
+export function setTypeFilter(filter: TypeFilter): void {
+  activeTypeFilter = filter;
+  // Sync UI button styles
+  const buttons = document.querySelectorAll<HTMLButtonElement>("[data-type-filter]");
+  buttons.forEach((btn) => {
+    const isActive = btn.dataset.typeFilter === filter;
+    btn.classList.toggle("active", isActive);
+    btn.classList.toggle("bg-slate-700/60", isActive);
+    btn.classList.toggle("text-slate-200", isActive);
+    btn.classList.toggle("border-slate-600/60", isActive);
+    btn.classList.toggle("bg-slate-800/40", !isActive);
+    btn.classList.toggle("text-slate-400", !isActive);
+  });
+  applyFilters();
+}
+
+export function applyFilters(): void {
   const grid = document.querySelector<HTMLDivElement>("[data-zone-grid]");
   if (!grid) return;
-  const cards = Array.from(
-    grid.querySelectorAll<HTMLElement>("[data-zone-card]"),
-  );
-  const searchInput = document.querySelector<HTMLInputElement>(
-    "[data-zone-search]",
-  );
+
+  const cards = Array.from(grid.querySelectorAll<HTMLElement>("[data-zone-card]"));
+  const searchInput = document.querySelector<HTMLInputElement>("[data-zone-search]");
+  const clearBtn = document.querySelector<HTMLElement>("[data-zone-search-clear]");
   const query = (searchInput?.value ?? "").trim().toLowerCase();
 
-  let visibleCount = 0;
-  for (const card of cards) {
-    const type = card.dataset.zoneType ?? "";
-    const name = (card.dataset.zoneName ?? "").toLowerCase();
-    const id = card.dataset.zoneId ?? "";
+  if (clearBtn) {
+    clearBtn.classList.toggle("hidden", query.length === 0);
+  }
 
-    const matchesType = activeFilter === "all" || type === activeFilter;
+  let visibleCount = 0;
+
+  for (const card of cards) {
+    const type = (card.dataset.zoneType ?? "") as ParkingZone["type"];
+    const name = (card.dataset.zoneName ?? "").toLowerCase();
+    const location = (card.dataset.zoneLocation ?? "").toLowerCase();
+    const id = (card.dataset.zoneId ?? "").toLowerCase();
+    const available = Number(card.dataset.zoneAvailable ?? 0);
+    const isClosed = card.dataset.zoneClosed === "true";
+
+    // 1. Status Filter matching
+    let matchesStatus = true;
+    if (activeStatusFilter === "available") {
+      matchesStatus = available > 0 && !isClosed;
+    } else if (activeStatusFilter === "full") {
+      matchesStatus = available <= 0 && !isClosed;
+    } else if (activeStatusFilter === "emergency") {
+      matchesStatus = isClosed;
+    }
+
+    // 2. Type Filter matching
+    const matchesType = activeTypeFilter === "all" || type === activeTypeFilter;
+
+    // 3. Search query matching
     const matchesQuery =
       query.length === 0 ||
       name.includes(query) ||
+      location.includes(query) ||
       id.includes(query);
 
-    const show = matchesType && matchesQuery;
+    const show = matchesStatus && matchesType && matchesQuery;
     card.classList.toggle("hidden", !show);
     if (show) visibleCount++;
   }
 
-  // Toggle the empty-results state.
+  // Update visible zone count badge
+  const countEl = document.querySelector<HTMLElement>("[data-visible-zone-count]");
+  if (countEl) {
+    countEl.textContent = String(visibleCount);
+  }
+
+  // Toggle no-results placeholder
   const noResults = document.querySelector<HTMLElement>("[data-no-results]");
   if (noResults) {
     noResults.classList.toggle("hidden", visibleCount > 0);
   }
 }
 
-function bindFilterTabs(): void {
-  const tabs = document.querySelectorAll<HTMLButtonElement>(
-    "[data-filter-tab]",
-  );
-  tabs.forEach((tab) => {
-    tab.addEventListener("click", () => {
-      tabs.forEach((t) => {
-        const isActive = t === tab;
-        t.setAttribute("aria-selected", isActive ? "true" : "false");
-        t.classList.toggle("bg-emerald-500/15", isActive);
-        t.classList.toggle("text-emerald-300", isActive);
-        t.classList.toggle("border-emerald-500/40", isActive);
-        t.classList.toggle("bg-slate-800/40", !isActive);
-        t.classList.toggle("text-slate-300", !isActive);
-        t.classList.toggle("border-slate-700/60", !isActive);
-      });
-      const key = parseFilterTab(tab.dataset.filterTab);
-      activeFilter = key;
-      applyFilters();
+function bindStatusFilterTabs(): void {
+  const buttons = document.querySelectorAll<HTMLButtonElement>("[data-status-filter]");
+  buttons.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const filter = (btn.dataset.statusFilter || "all") as StatusFilter;
+      setStatusFilter(filter);
+    });
+  });
+}
+
+function bindTypeFilterTabs(): void {
+  const buttons = document.querySelectorAll<HTMLButtonElement>("[data-type-filter]");
+  buttons.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const filter = (btn.dataset.typeFilter || "all") as TypeFilter;
+      setTypeFilter(filter);
     });
   });
 }
 
 function bindSearchInput(): void {
-  const input = document.querySelector<HTMLInputElement>(
-    "[data-zone-search]",
-  );
-  if (!input) return;
-  input.addEventListener("input", () => {
-    applyFilters();
-  });
+  const input = document.querySelector<HTMLInputElement>("[data-zone-search]");
+  const clearBtn = document.querySelector<HTMLElement>("[data-zone-search-clear]");
+
+  if (input) {
+    input.addEventListener("input", () => {
+      applyFilters();
+    });
+  }
+
+  if (clearBtn && input) {
+    clearBtn.addEventListener("click", () => {
+      input.value = "";
+      applyFilters();
+      input.focus();
+    });
+  }
 }
 
-/**
- * Re-applies the current filter state to the grid. Exposed so the
- * catalog refresh module can re-filter after rebuilding the grid.
- */
 export function reapplyFilters(): void {
   applyFilters();
 }
 
 export function bindFilterControls(): void {
-  bindFilterTabs();
+  bindStatusFilterTabs();
+  bindTypeFilterTabs();
   bindSearchInput();
 }

@@ -82,6 +82,25 @@
       <span data-reserve-error-text>Something went wrong. Please try again.</span>
     </div>
 
+    <!-- Emergency warning banner -->
+    <div
+      data-reserve-emergency-banner
+      class="hidden mb-4 p-3 rounded-xl bg-red-950/50 border border-red-500/40 text-red-200 text-xs space-y-1"
+      role="alert"
+    >
+      <div class="flex items-center gap-1.5 font-bold text-red-300">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4 text-red-400">
+          <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+          <line x1="12" y1="9" x2="12" y2="13"></line>
+          <line x1="12" y1="17" x2="12.01" y2="17"></line>
+        </svg>
+        <span>Zone Closed Due to Emergency</span>
+      </div>
+      <p data-reserve-emergency-text class="text-red-200/90 pl-5.5">
+        This zone is currently unavailable for new reservations.
+      </p>
+    </div>
+
     <!-- Reservation form -->
     <form data-reserve-form class="space-y-4" novalidate>
       <input type="hidden" data-zone-id-input name="zone_id" value="" />

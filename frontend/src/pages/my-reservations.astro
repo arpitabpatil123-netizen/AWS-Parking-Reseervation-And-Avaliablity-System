@@ -22,6 +22,7 @@ import ReservationKpiStrip from "@/components/reservations/ReservationKpiStrip.a
 import ReservationToolbar from "@/components/reservations/ReservationToolbar.astro";
 import ReservationStates from "@/components/reservations/ReservationStates.astro";
 import CancelReservationDialog from "@/components/reservations/CancelReservationDialog.astro";
+import { IncidentNotifications } from "@/components/reservations/IncidentNotifications";
 ---
 
 <Layout
@@ -49,6 +50,7 @@ import CancelReservationDialog from "@/components/reservations/CancelReservation
       </div>
     </div>
 
+    <IncidentNotifications client:load />
     <ReservationHeader />
     <ReservationKpiStrip />
     <ReservationToolbar />

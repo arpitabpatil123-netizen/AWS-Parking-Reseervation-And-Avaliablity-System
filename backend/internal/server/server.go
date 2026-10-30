@@ -10,7 +10,6 @@
 package server
 
 import (
-	"context"
 	"log"
 	"net/http"
 	"sync"
@@ -143,16 +142,19 @@ func build() {
 	userRepo := repository.NewUserRepository(db)
 	zoneRepo := repository.NewZoneRepository(db)
 	reservationRepo := repository.NewReservationRepository(db)
+	incidentRepo := repository.NewIncidentRepository(db)
 
 	// Services
 	authService := service.NewAuthService(userRepo, cfg.JWTSecret)
 	zoneService := service.NewZoneService(zoneRepo)
 	reservationService := service.NewReservationService(reservationRepo)
+	incidentService := service.NewIncidentService(incidentRepo)
 
 	// Handlers
 	authHandler := handler.NewAuthHandler(authService)
 	zoneHandler := handler.NewZoneHandler(zoneService)
 	reservationHandler := handler.NewReservationHandler(reservationService)
+	incidentHandler := handler.NewIncidentHandler(incidentService)
 
 	// Run GORM auto-migrations in the background so the server can
 	// accept traffic immediately.
@@ -179,10 +181,16 @@ func build() {
 			log.Printf("User seeder inserted %d demo accounts", inserted)
 		}
 
-		// Boot the 1-hour rotation worker. The rotator is cancelled via
-		// the server shutdown context so its goroutine exits cleanly.
-		rotator := seeder.NewZoneRotator(db, 0) // 0 -> use default (1 hour)
-		rotator.Start(context.Background())
+		// Seed initial demo incidents and emergency closures if needed.
+		if inserted, err := seeder.SeedIncidentsIfNeeded(db); err != nil {
+			log.Printf("WARNING: Incident seeder failed: %v", err)
+		} else if inserted > 0 {
+			log.Printf("Incident seeder inserted %d demo incidents", inserted)
+		}
+
+		// Ensure all rotation holds are cleared so zones reflect real reservations.
+		rotator := seeder.NewZoneRotator(db, 0)
+		_ = rotator.RotateOnce()
 	}()
 
 	// --- Public auth routes ---
@@ -221,6 +229,19 @@ func build() {
 	reservationGroup.POST("", reservationHandler.Create)
 	reservationGroup.PATCH("/:id/status", reservationHandler.UpdateStatus)
 	reservationGroup.DELETE("/:id", reservationHandler.Delete)
+
+	// Incidents and emergency closures are restricted to admins and
+	// provisioned staff accounts. Notification reads are scoped to the JWT user.
+	incidentGroup := e.Group("/api/v1/incidents", auth, middleware.IncidentStaffOnly())
+	incidentGroup.POST("", incidentHandler.Create)
+	incidentGroup.GET("", incidentHandler.List)
+	incidentGroup.GET("/:id/affected-reservations", incidentHandler.AffectedReservations)
+	incidentGroup.GET("/:id", incidentHandler.GetByID)
+	incidentGroup.PATCH("/:id/status", incidentHandler.UpdateStatus)
+
+	notificationGroup := e.Group("/api/v1/notifications", auth)
+	notificationGroup.GET("/mine", incidentHandler.ListNotifications)
+	notificationGroup.PATCH("/:id/read", incidentHandler.MarkNotificationRead)
 
 	app = e
 }

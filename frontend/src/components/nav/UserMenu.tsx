@@ -55,7 +55,8 @@ function useClickOutside(
 /* -------------------------------------------------------------------------- */
 
 function roleLabel(role: UserRole): string {
-  return role === USER_ROLES.ADMIN ? "Admin" : "Driver";
+  if (role === USER_ROLES.ADMIN) return "Admin";
+  return role === "staff" ? "Staff" : "Driver";
 }
 
 function roleBadgeClass(role: UserRole): string {
@@ -90,17 +91,14 @@ export function UserMenu(props: UserMenuProps) {
   // SSR safety: the persistent atom only reads from localStorage in
   // the browser, so on the server we always render the guest state.
   // The client `useEffect` below upgrades us to the avatar once the
-  // store has hydrated — `mounted` tracks the transition so the
-  // hydration step stays deterministic and never flashes the wrong UI.
-  const [user, setUser] = React.useState<User | null>(null);
-  const [mounted, setMounted] = React.useState(false);
+  // store has hydrated.
+  const [user, setUser] = React.useState<User | null>(props.initialUser ?? null);
 
   React.useEffect(() => {
     // Pull the persisted user once the store is available, then
     // subscribe so login/logout/profile-update from anywhere else
     // in the app keeps the avatar in sync without manual refreshes.
     setUser($user.get());
-    setMounted(true);
     return $user.listen((next) => setUser(next));
   }, []);
 

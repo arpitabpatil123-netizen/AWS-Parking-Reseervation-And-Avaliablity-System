@@ -150,6 +150,13 @@ export const API_ENDPOINTS = {
   RESERVATIONS_MINE: "/reservations/mine",
   RESERVATION_STATUS: (id: number): string => `/reservations/${id}/status`,
   RESERVATION_BY_ID: (id: number): string => `/reservations/${id}`,
+  INCIDENTS: "/incidents",
+  INCIDENT_BY_ID: (id: number): string => `/incidents/${id}`,
+  INCIDENT_STATUS: (id: number): string => `/incidents/${id}/status`,
+  INCIDENT_AFFECTED_RESERVATIONS: (id: number): string =>
+    `/incidents/${id}/affected-reservations`,
+  NOTIFICATIONS_MINE: "/notifications/mine",
+  NOTIFICATION_READ: (id: number): string => `/notifications/${id}/read`,
 } as const;
 
 /* -------------------------------------------------------------------------- */
@@ -242,6 +249,7 @@ export const ZONE_TYPE_ICONS: Record<
 export const USER_ROLES = {
   DRIVER: "driver",
   ADMIN: "admin",
+  STAFF: "staff",
 } as const;
 
 /** Display labels for user roles. */
@@ -251,6 +259,7 @@ export const USER_ROLE_LABELS: Record<
 > = {
   driver: "Driver",
   admin: "Admin",
+  staff: "Staff",
 };
 
 /* -------------------------------------------------------------------------- */

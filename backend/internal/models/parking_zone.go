@@ -9,25 +9,29 @@ import (
 // ParkingZone represents a parking zone in the system.
 // Valid Type values are: "general", "ev_charging", "covered".
 type ParkingZone struct {
-	ID            uint          `gorm:"primaryKey;autoIncrement" json:"id"`
-	Name          string        `gorm:"type:varchar(100);not null" json:"name"`
-	Type          string        `gorm:"type:varchar(30);not null" json:"type"`
-	TotalCapacity int           `gorm:"not null" json:"total_capacity"`
+	ID            uint   `gorm:"primaryKey;autoIncrement" json:"id"`
+	Name          string `gorm:"type:varchar(100);not null" json:"name"`
+	Type          string `gorm:"type:varchar(30);not null" json:"type"`
+	TotalCapacity int    `gorm:"not null" json:"total_capacity"`
 	// PricePerHour is stored in Indian rupees (INR).
-	PricePerHour  float64       `gorm:"type:numeric(10,2);not null" json:"price_per_hour"`
+	PricePerHour float64 `gorm:"type:numeric(10,2);not null" json:"price_per_hour"`
 	// RotationHold is a non-negative integer managed by the background
 	// ZoneRotator. It is subtracted from available_spots in the catalog
 	// response so a zone can be marked "full" without polluting the
 	// reservations table with synthetic rows.
 	//
 	// Mechanism:
-	//   available_spots = total_capacity - active_reservations - rotation_hold
+	// Available spots also account for held spots, and are forced to zero
+	// while EmergencyClosed is true.
 	//
 	// The rotator enforces the 60/40 availability invariant detailed in
 	// the spec by setting rotation_hold to total_capacity on zones that
 	// should appear full, and resetting it to 0 on zones that should
 	// appear available.
 	RotationHold int `gorm:"not null;default:0" json:"rotation_hold"`
+	// EmergencyClosed is managed by active incident records, independently
+	// from RotationHold so the availability rotator cannot reopen a closure.
+	EmergencyClosed bool `gorm:"not null;default:false" json:"emergency_closed"`
 	// SpotHolds is a per-spot bitmap: element i is 1 when spot #i+1 is
 	// held/reserved (presentation-only) and 0 when it is available. The
 	// length of the array must always equal TotalCapacity. The slice is
@@ -43,8 +47,8 @@ type ParkingZone struct {
 	//
 	// Stored as a PostgreSQL integer[] column. Stored empty ('{}') for
 	// zero-capacity zones.
-	SpotHolds pq.Int64Array `gorm:"type:integer[];not null;default:'{}'" json:"spot_holds"`
-	CreatedAt time.Time     `json:"created_at"`
-	UpdatedAt time.Time     `json:"updated_at"`
+	SpotHolds    pq.Int64Array `gorm:"type:integer[];not null;default:'{}'" json:"spot_holds"`
+	CreatedAt    time.Time     `json:"created_at"`
+	UpdatedAt    time.Time     `json:"updated_at"`
 	Reservations []Reservation `gorm:"foreignKey:ZoneID" json:"reservations,omitempty"`
 }

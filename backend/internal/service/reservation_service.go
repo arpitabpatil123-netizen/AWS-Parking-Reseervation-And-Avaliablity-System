@@ -18,6 +18,7 @@ import (
 var (
 	ErrReservationNotFound = errors.New("reservation not found")
 	ErrZoneFull            = errors.New("zone has reached full capacity")
+	ErrZoneClosed          = errors.New("zone is temporarily closed due to an incident")
 	ErrUnauthorized        = errors.New("not authorized to perform this action")
 	ErrInvalidStatusChange = errors.New("invalid status transition")
 )
@@ -60,6 +61,8 @@ func (s *reservationService) Create(userID uint, req dto.CreateReservationReques
 			return nil, ErrZoneNotFound
 		case errors.Is(err, repository.ErrZoneFull):
 			return nil, ErrZoneFull
+		case errors.Is(err, repository.ErrZoneClosed):
+			return nil, ErrZoneClosed
 		default:
 			return nil, err
 		}

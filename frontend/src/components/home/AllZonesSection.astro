@@ -1,0 +1,91 @@
+---
+// AllZonesSection.astro
+//
+// Section 4 in the User Dashboard Layout:
+// Renders all parking zones in a clean, compact grid layout.
+
+import ZoneCard from "../ZoneCard.astro";
+import type { ParkingZone } from "../../types/zone";
+
+interface Props {
+  zones: ParkingZone[];
+  fetchError: string | null;
+}
+
+const { zones, fetchError } = Astro.props;
+
+// Sort: zones with available spots first, full / emergency last
+const sortedZones = [...zones].sort((a, b) => {
+  const aClosed = a.emergency_closed ? 2 : (a.available_spots ?? 0) <= 0 ? 1 : 0;
+  const bClosed = b.emergency_closed ? 2 : (b.available_spots ?? 0) <= 0 ? 1 : 0;
+  return aClosed - bClosed;
+});
+---
+
+<section id="all-zones" class="mb-10 scroll-mt-20" aria-label="All Parking Zones">
+  <!-- Section Title -->
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
+    <div>
+      <h2 class="font-display text-xl sm:text-2xl font-bold text-slate-100 flex items-center gap-2">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="w-5 h-5 text-emerald-400">
+          <rect width="7" height="7" x="3" y="3" rx="1"></rect>
+          <rect width="7" height="7" x="14" y="3" rx="1"></rect>
+          <rect width="7" height="7" x="14" y="14" rx="1"></rect>
+          <rect width="7" height="7" x="3" y="14" rx="1"></rect>
+        </svg>
+        All Parking Zones
+      </h2>
+      <p class="text-xs text-slate-400 mt-0.5">
+        Live occupancy and real-time space reservations across the network.
+      </p>
+    </div>
+
+    <div class="flex items-center gap-2 text-xs text-slate-400">
+      <span class="inline-flex items-center px-2 py-0.5 rounded-md bg-slate-800/80 border border-slate-700/60 font-medium">
+        <span class="text-emerald-400 font-bold mr-1" data-visible-zone-count>{zones.length}</span> zones displayed
+      </span>
+    </div>
+  </div>
+
+  {fetchError && (
+    <div class="glass-card p-4 mb-4 border-red-500/40 bg-red-500/10 rounded-2xl">
+      <div class="flex items-start gap-3">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="8" x2="12" y2="12"></line>
+          <line x1="12" y1="16" x2="12.01" y2="16"></line>
+        </svg>
+        <div>
+          <p class="text-sm font-semibold text-red-200">Unable to connect to live backend API</p>
+          <p class="text-xs text-red-300/80 mt-0.5">{fetchError}</p>
+        </div>
+      </div>
+    </div>
+  )}
+
+  <!-- Zone Grid -->
+  <div
+    class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+    data-zone-grid
+    id="zone-grid"
+  >
+    {sortedZones.map((zone) => <ZoneCard zone={zone} />)}
+  </div>
+
+  <!-- Filter Empty Placeholder -->
+  <div
+    id="zone-no-results"
+    class="hidden glass-card p-8 text-center rounded-2xl mt-4 border-slate-700/60"
+    data-no-results
+  >
+    <div class="w-10 h-10 rounded-xl bg-slate-800/80 border border-slate-700 flex items-center justify-center mx-auto mb-2 text-slate-400">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5">
+        <circle cx="11" cy="11" r="8"></circle>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+      </svg>
+    </div>
+    <p class="text-sm font-semibold text-slate-200">No parking zones match your search or filter</p>
+    <p class="text-xs text-slate-400 mt-1">Try resetting your filter to "All Zones" or clearing the search text.</p>
+  </div>
+</section>
+

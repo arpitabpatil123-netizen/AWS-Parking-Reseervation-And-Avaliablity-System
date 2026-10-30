@@ -43,6 +43,8 @@ func (h *ReservationHandler) Create(c echo.Context) error {
 			return utils.JSONError(c, http.StatusNotFound, "Zone not found", err.Error())
 		case errors.Is(err, service.ErrZoneFull):
 			return utils.JSONError(c, http.StatusConflict, "Zone is full", err.Error())
+		case errors.Is(err, service.ErrZoneClosed):
+			return utils.JSONError(c, http.StatusConflict, "Zone is temporarily closed", err.Error())
 		default:
 			return utils.JSONError(c, http.StatusInternalServerError, "Failed to create reservation", err.Error())
 		}

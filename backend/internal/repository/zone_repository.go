@@ -2,6 +2,7 @@ package repository
 
 import (
 	"errors"
+	"strings"
 	"time"
 
 	"github.com/lib/pq"
@@ -93,7 +94,16 @@ func (r *zoneRepository) List() ([]models.ParkingZone, error) {
 }
 
 func (r *zoneRepository) Update(zone *models.ParkingZone) error {
-	return r.db.Save(zone).Error
+	// Update only admin-editable catalog fields. Saving the full model could
+	// overwrite an emergency closure or rotator update loaded from a stale row.
+	return r.db.Model(&models.ParkingZone{}).
+		Where("id = ?", zone.ID).
+		Updates(map[string]interface{}{
+			"name":           zone.Name,
+			"type":           zone.Type,
+			"total_capacity": zone.TotalCapacity,
+			"price_per_hour": zone.PricePerHour,
+		}).Error
 }
 
 func (r *zoneRepository) Delete(id uint) error {
@@ -110,6 +120,88 @@ func (r *zoneRepository) CountActiveReservations(zoneID uint) (int64, error) {
 		return 0, err
 	}
 	return count, nil
+}
+
+// DeriveLocation extracts or generates a clean location from a zone name.
+func DeriveLocation(name string) string {
+	switch name {
+	case "Kempegowda Airport T1 EV Charging Hub", "Kempegowda Airport T1 General Parking", "Kempegowda Airport T1 Covered Deck":
+		return "Kempegowda Airport Terminal 1, Devanahalli"
+	case "Kempegowda Airport T2 EV Bay", "Kempegowda Airport T2 Open Parking":
+		return "Kempegowda Airport Terminal 2, Devanahalli"
+	case "Orion Mall Rajajinagar EV Charging", "Orion Mall Rajajinagar General Parking", "Orion Mall Rajajinagar Underground P-1":
+		return "Orion Mall, Rajajinagar"
+	case "BIEC Tumakuru Road EV Stalls", "BIEC Tumakuru Road Covered Parking":
+		return "BIEC, Tumakuru Road"
+	case "Chinnaswamy Stadium EV Parking", "Chinnaswamy Stadium North Covered Parking":
+		return "Chinnaswamy Stadium, MG Road"
+	case "Manyata Tech Park Nagawara EV Plaza":
+		return "Manyata Tech Park, Nagawara"
+	case "Bellandur EV Charge Point":
+		return "Outer Ring Road, Bellandur"
+	case "Vidhana Soudha EV Priority Parking":
+		return "Ambedkar Veedhi, Central Bengaluru"
+	case "Manipal Hospital Old Airport Road EV Bay", "Manipal Hospital Old Airport Road Covered Garage":
+		return "Old Airport Road, Kodihalli"
+	case "IISc Bengaluru EV Fast Charge":
+		return "CV Raman Road, Mathikere"
+	case "NICE Road Electronic City EV Station":
+		return "NICE Road, Electronic City Phase 1"
+	case "UB City CBD EV Charging", "UB City Covered Garage":
+		return "UB City, Vittal Mallya Road"
+	case "Kanteerava Stadium EV Lot":
+		return "Kasturba Road, Sampangi Rama Nagar"
+	case "Phoenix Marketcity Mahadevapura EV Corner", "Phoenix Marketcity Mahadevapura Underground P-2":
+		return "Phoenix Marketcity, Mahadevapura"
+	case "Forum South Bengaluru EV Charging":
+		return "Forum South Mall, Kanakapura Road"
+	case "MG Road Street Parking", "MG Road Metro Multi-Level Parking":
+		return "MG Road Boulevard"
+	case "KR Market Parking Lot":
+		return "KR Market, Kalasipalya"
+	case "KSR Bengaluru City Station North Lot":
+		return "KSR Railway Station, Majestic"
+	case "Majestic Bus Stand Long Stay Parking":
+		return "Kempegowda Bus Station, Majestic"
+	case "Bengaluru Palace Grounds Event Parking":
+		return "Palace Grounds, Jayamahal"
+	case "Sankey Tank Open Lot":
+		return "Sankey Tank, Sadashivanagar"
+	case "Jayanagar 4th Block Community Parking":
+		return "4th Block, Jayanagar"
+	case "Brigade Road Parking", "Brigade Road Covered Garage":
+		return "Brigade Road Commercial Hub"
+	case "Cubbon Park Parking":
+		return "Cubbon Park, Kasturba Road"
+	case "Koramangala 5th Block Parking":
+		return "5th Block, Koramangala"
+	case "Yelahanka Town Parking":
+		return "Yelahanka Old Town"
+	case "Peenya Industrial Area Parking":
+		return "Peenya Industrial Area Phase 1"
+	case "Mysuru Palace Covered Parking":
+		return "Mysuru Palace, Varaha Gate"
+	}
+
+	clean := name
+	suffixes := []string{
+		" EV Charging Hub", " EV Charging", " EV Stalls", " EV Bay", " EV Parking", " EV Plaza",
+		" EV Charge Point", " EV Priority Parking", " EV Fast Charge", " EV Station", " EV Lot",
+		" EV Corner", " General Parking", " Open Parking", " Street Parking", " Parking Lot",
+		" North Lot", " Long Stay Parking", " Event Parking", " Open Lot", " Community Parking",
+		" Parking", " Covered Garage", " Multi-Level Parking", " Underground P-1", " Underground P-2",
+		" Covered Deck", " Covered Parking",
+	}
+	for _, suffix := range suffixes {
+		if strings.HasSuffix(clean, suffix) {
+			clean = strings.TrimSuffix(clean, suffix)
+			break
+		}
+	}
+	if clean != "" {
+		return clean + ", Bengaluru"
+	}
+	return "Bengaluru, Karnataka"
 }
 
 // FindAllWithAvailability returns every parking zone with a dynamically
@@ -142,27 +234,39 @@ func (r *zoneRepository) CountActiveReservations(zoneID uint) (int64, error) {
 // to do an N+1 lookup.
 func (r *zoneRepository) FindAllWithAvailability() ([]dto.ZoneResponse, error) {
 	type row struct {
-		ID             uint          `gorm:"column:id"`
-		Name           string        `gorm:"column:name"`
-		Type           string        `gorm:"column:type"`
-		TotalCapacity  int           `gorm:"column:total_capacity"`
-		AvailableSpots int           `gorm:"column:available_spots"`
-		PricePerHour   float64       `gorm:"column:price_per_hour"`
-		SpotHolds      pq.Int64Array `gorm:"column:spot_holds"`
-		CreatedAt      string        `gorm:"column:created_at"`
-		UpdatedAt      string        `gorm:"column:updated_at"`
+		ID                   uint          `gorm:"column:id"`
+		Name                 string        `gorm:"column:name"`
+		Type                 string        `gorm:"column:type"`
+		TotalCapacity        int           `gorm:"column:total_capacity"`
+		AvailableSpots       int           `gorm:"column:available_spots"`
+		EmergencyClosed      bool          `gorm:"column:emergency_closed"`
+		ClosureReason        string        `gorm:"column:emergency_closure_reason"`
+		LatestIncidentStatus string        `gorm:"column:latest_incident_status"`
+		LatestIncidentType   string        `gorm:"column:latest_incident_type"`
+		PricePerHour         float64       `gorm:"column:price_per_hour"`
+		SpotHolds            pq.Int64Array `gorm:"column:spot_holds;type:integer[]"`
+		CreatedAt            string        `gorm:"column:created_at"`
+		UpdatedAt            string        `gorm:"column:updated_at"`
 	}
 
 	var rows []row
 	err := r.db.
 		Table("parking_zones pz").
-		Select(`pz.id, pz.name, pz.type, pz.total_capacity,
-		        GREATEST(0, pz.total_capacity
-		            - (SELECT COUNT(*) FROM unnest(pz.spot_holds) AS s(hold) WHERE s.hold = 1)
+		Select(`pz.id, pz.name, pz.type, pz.total_capacity, pz.emergency_closed,
+		        CASE WHEN pz.emergency_closed THEN 0 ELSE GREATEST(0, pz.total_capacity
 		            - (SELECT COUNT(*) FROM reservations r
 		                WHERE r.zone_id = pz.id AND r.status = 'active')
-		            - pz.rotation_hold
-		        ) AS available_spots,
+		        ) END AS available_spots,
+		        (SELECT i.description FROM incidents i
+		            WHERE i.zone_id = pz.id AND i.closes_zone = true
+		              AND i.status IN ('open', 'in_progress')
+		            ORDER BY i.created_at DESC LIMIT 1) AS emergency_closure_reason,
+		        (SELECT i.status FROM incidents i
+		            WHERE i.zone_id = pz.id
+		            ORDER BY i.created_at DESC LIMIT 1) AS latest_incident_status,
+		        (SELECT i.type FROM incidents i
+		            WHERE i.zone_id = pz.id
+		            ORDER BY i.created_at DESC LIMIT 1) AS latest_incident_type,
 		        pz.price_per_hour, pz.spot_holds,
 		        pz.created_at, pz.updated_at`).
 		Order("pz.id ASC").
@@ -173,14 +277,54 @@ func (r *zoneRepository) FindAllWithAvailability() ([]dto.ZoneResponse, error) {
 
 	out := make([]dto.ZoneResponse, 0, len(rows))
 	for _, r := range rows {
+		emergencyStatus := ""
+		affectedSpots := 0
+		closureReason := r.ClosureReason
+
+		if r.EmergencyClosed {
+			affectedSpots = r.TotalCapacity
+			switch r.LatestIncidentType {
+			case "emergency_closure":
+				emergencyStatus = "Emergency Active"
+			case "blocked_space":
+				emergencyStatus = "Blocked"
+			case "maintenance":
+				emergencyStatus = "Temporarily Unavailable"
+			default:
+				if r.LatestIncidentStatus == "in_progress" {
+					emergencyStatus = "Temporarily Unavailable"
+				} else {
+					emergencyStatus = "Emergency Active"
+				}
+			}
+			if closureReason == "" {
+				closureReason = "Temporary safety and maintenance closure."
+			}
+		} else if r.LatestIncidentStatus == "resolved" {
+			emergencyStatus = "Restored"
+		}
+
+		spotHolds := make([]int64, r.TotalCapacity)
+		occupied := r.TotalCapacity - r.AvailableSpots
+		if !r.EmergencyClosed {
+			for i := 0; i < occupied && i < r.TotalCapacity; i++ {
+				spotHolds[i] = 1
+			}
+		}
+
 		z := dto.ZoneResponse{
-			ID:             r.ID,
-			Name:           r.Name,
-			Type:           r.Type,
-			TotalCapacity:  r.TotalCapacity,
-			AvailableSpots: r.AvailableSpots,
-			PricePerHour:   r.PricePerHour,
-			SpotHolds:      []int64(r.SpotHolds),
+			ID:              r.ID,
+			Name:            r.Name,
+			Location:        DeriveLocation(r.Name),
+			Type:            r.Type,
+			TotalCapacity:   r.TotalCapacity,
+			AvailableSpots:  r.AvailableSpots,
+			EmergencyClosed: r.EmergencyClosed,
+			EmergencyStatus: emergencyStatus,
+			ClosureReason:   closureReason,
+			AffectedSpots:   affectedSpots,
+			PricePerHour:    r.PricePerHour,
+			SpotHolds:       spotHolds,
 		}
 		if t, err := parseTime(r.CreatedAt); err == nil {
 			z.CreatedAt = t
@@ -198,27 +342,39 @@ func (r *zoneRepository) FindAllWithAvailability() ([]dto.ZoneResponse, error) {
 // does not exist.
 func (r *zoneRepository) FindByIDWithAvailability(id uint) (*dto.ZoneResponse, error) {
 	type row struct {
-		ID             uint          `gorm:"column:id"`
-		Name           string        `gorm:"column:name"`
-		Type           string        `gorm:"column:type"`
-		TotalCapacity  int           `gorm:"column:total_capacity"`
-		AvailableSpots int           `gorm:"column:available_spots"`
-		PricePerHour   float64       `gorm:"column:price_per_hour"`
-		SpotHolds      pq.Int64Array `gorm:"column:spot_holds"`
-		CreatedAt      string        `gorm:"column:created_at"`
-		UpdatedAt      string        `gorm:"column:updated_at"`
+		ID                   uint          `gorm:"column:id"`
+		Name                 string        `gorm:"column:name"`
+		Type                 string        `gorm:"column:type"`
+		TotalCapacity        int           `gorm:"column:total_capacity"`
+		AvailableSpots       int           `gorm:"column:available_spots"`
+		EmergencyClosed      bool          `gorm:"column:emergency_closed"`
+		ClosureReason        string        `gorm:"column:emergency_closure_reason"`
+		LatestIncidentStatus string        `gorm:"column:latest_incident_status"`
+		LatestIncidentType   string        `gorm:"column:latest_incident_type"`
+		PricePerHour         float64       `gorm:"column:price_per_hour"`
+		SpotHolds            pq.Int64Array `gorm:"column:spot_holds;type:integer[]"`
+		CreatedAt            string        `gorm:"column:created_at"`
+		UpdatedAt            string        `gorm:"column:updated_at"`
 	}
 
 	var r0 row
 	err := r.db.
 		Table("parking_zones pz").
-		Select(`pz.id, pz.name, pz.type, pz.total_capacity,
-		        GREATEST(0, pz.total_capacity
-		            - (SELECT COUNT(*) FROM unnest(pz.spot_holds) AS s(hold) WHERE s.hold = 1)
+		Select(`pz.id, pz.name, pz.type, pz.total_capacity, pz.emergency_closed,
+		        CASE WHEN pz.emergency_closed THEN 0 ELSE GREATEST(0, pz.total_capacity
 		            - (SELECT COUNT(*) FROM reservations r
 		                WHERE r.zone_id = pz.id AND r.status = 'active')
-		            - pz.rotation_hold
-		        ) AS available_spots,
+		        ) END AS available_spots,
+		        (SELECT i.description FROM incidents i
+		            WHERE i.zone_id = pz.id AND i.closes_zone = true
+		              AND i.status IN ('open', 'in_progress')
+		            ORDER BY i.created_at DESC LIMIT 1) AS emergency_closure_reason,
+		        (SELECT i.status FROM incidents i
+		            WHERE i.zone_id = pz.id
+		            ORDER BY i.created_at DESC LIMIT 1) AS latest_incident_status,
+		        (SELECT i.type FROM incidents i
+		            WHERE i.zone_id = pz.id
+		            ORDER BY i.created_at DESC LIMIT 1) AS latest_incident_type,
 		        pz.price_per_hour, pz.spot_holds,
 		        pz.created_at, pz.updated_at`).
 		Where("pz.id = ?", id).
@@ -232,14 +388,54 @@ func (r *zoneRepository) FindByIDWithAvailability(id uint) (*dto.ZoneResponse, e
 		return nil, gorm.ErrRecordNotFound
 	}
 
+	emergencyStatus := ""
+	affectedSpots := 0
+	closureReason := r0.ClosureReason
+
+	if r0.EmergencyClosed {
+		affectedSpots = r0.TotalCapacity
+		switch r0.LatestIncidentType {
+		case "emergency_closure":
+			emergencyStatus = "Emergency Active"
+		case "blocked_space":
+			emergencyStatus = "Blocked"
+		case "maintenance":
+			emergencyStatus = "Temporarily Unavailable"
+		default:
+			if r0.LatestIncidentStatus == "in_progress" {
+				emergencyStatus = "Temporarily Unavailable"
+			} else {
+				emergencyStatus = "Emergency Active"
+			}
+		}
+		if closureReason == "" {
+			closureReason = "Temporary safety and maintenance closure."
+		}
+	} else if r0.LatestIncidentStatus == "resolved" {
+		emergencyStatus = "Restored"
+	}
+
+	spotHolds := make([]int64, r0.TotalCapacity)
+	occupied := r0.TotalCapacity - r0.AvailableSpots
+	if !r0.EmergencyClosed {
+		for i := 0; i < occupied && i < r0.TotalCapacity; i++ {
+			spotHolds[i] = 1
+		}
+	}
+
 	z := &dto.ZoneResponse{
-		ID:             r0.ID,
-		Name:           r0.Name,
-		Type:           r0.Type,
-		TotalCapacity:  r0.TotalCapacity,
-		AvailableSpots: r0.AvailableSpots,
-		PricePerHour:   r0.PricePerHour,
-		SpotHolds:      []int64(r0.SpotHolds),
+		ID:              r0.ID,
+		Name:            r0.Name,
+		Location:        DeriveLocation(r0.Name),
+		Type:            r0.Type,
+		TotalCapacity:   r0.TotalCapacity,
+		AvailableSpots:  r0.AvailableSpots,
+		EmergencyClosed: r0.EmergencyClosed,
+		EmergencyStatus: emergencyStatus,
+		ClosureReason:   closureReason,
+		AffectedSpots:   affectedSpots,
+		PricePerHour:    r0.PricePerHour,
+		SpotHolds:       spotHolds,
 	}
 	if t, err := parseTime(r0.CreatedAt); err == nil {
 		z.CreatedAt = t
